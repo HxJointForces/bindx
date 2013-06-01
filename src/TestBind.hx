@@ -1,9 +1,9 @@
 package ;
 
+import bindx.Bindable;
 import bindx.IBindable;
 
-using bindx.Bind;
-
+using bindx.BindTools;
 /**
  * ...
  * @author deep <system.grand@gmail.com>
@@ -19,15 +19,14 @@ class TestBind
 		
 		var v = new Value();
 		//v.no = 10;
-		v.on("def", function (value) trace("def update to: " + value));
-		v.on("s", function (value) trace("s update to: '" + value + "'"));
-		
-		v.__bindings__.addListener(function (varName:String) { trace("updated: " + varName); } );
+		v.def.on(function () { trace("on def update"); } );
 		v.def = 12;
-		v.def = 14;
-		v.s = "23";
-		v.s = null;
-		v.a = 4;
+		trace(v.def);
+	}
+	
+	static function test<T>(a:BindableBase<T>) {
+		a.add(function () { trace("foobar"); } );
+		a.dispatch();
 	}
 	
 }
@@ -35,6 +34,7 @@ class TestBind
 class Value implements IBindable {
 	
 	@bindable public var a:Int;
+	@bindable public var ab:Null<Int>;
 	
 	//@bindable public var never(default, never):Int;
 	//@bindable public var no(default, null):Int;
