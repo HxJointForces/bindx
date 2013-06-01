@@ -1,0 +1,13 @@
+bin
+
+*.hxproj
+
+.idea
+*.iml
+*.ipr
+out/
+
+.DS_Store
+Thumbs.db
+
+target/

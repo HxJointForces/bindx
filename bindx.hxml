@@ -1,0 +1,6 @@
+-cp src
+-swf bin/bindx.swf
+-swf-header 800:600:30:FFFFFF
+--flash-strict
+-swf-version 11
+-main TestBind
