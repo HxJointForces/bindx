@@ -24,8 +24,8 @@ class BindMacros
 		
 		var ctor = null;
 		var hasBindings = false;
+		var updated:Bool = false;
 		
-		var bindables = [];
 		for (f in res) {
 			if (f.name == "new") ctor = f;
 			if (f.name == BINDINGS_FIELD) hasBindings = true;
@@ -41,11 +41,12 @@ class BindMacros
 			
 			if (Lambda.has(f.access, AStatic)) 
 				Context.error("can't bind static fields", f.pos);
+			
 			switch (f.kind) {
 				case FVar(ct, e):
 					f.kind = FProp("default", "set", ct, e);
 					res.push(genSetter(f.name, ct, f.pos));
-					bindables.push(f.name);
+					updated = true;
 					
 				case FProp(get, set, ct, e):
 					switch (set) {
@@ -55,7 +56,7 @@ class BindMacros
 						case "default", "null":
 							f.kind = FProp(get, "set", ct, e);
 							res.push(genSetter(f.name, ct, f.pos));
-							bindables.push(f.name);
+							updated = true;
 							
 						case "set":
 							f.kind = FProp(get, set, ct, e);
@@ -82,14 +83,15 @@ class BindMacros
 									
 								case _: throw "setter must be function";
 							}
-							bindables.push(f.name);
+							updated = true;
+							
 						case _: throw "unknown setter accesssor - " + set;
 					}
 				case _: Context.error("only variables must be bindable", f.pos);
 			}
 		}
 		
-		if (bindables.length == 0) return res;
+		if (!updated) return res;
 		
 		if (ctor == null) {
 			Context.error("define constructor for binding support", Context.currentPos());
