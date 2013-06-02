@@ -1,8 +1,5 @@
 package ;
 
-import bindx.Bind;
-import haxe.Log;
-
 import bindx.IBindable;
 
 using bindx.Bind;
@@ -12,15 +9,6 @@ using bindx.Bind;
  * @author deep <system.grand@gmail.com>
  */
 
-class A {
-	public function new() {
-		
-	}
-	
-	public function toString() {
-		return "a";
-	}
-}
 class TestBind
 {
 	var a:Int;
@@ -42,7 +30,7 @@ class TestBind
 		v.s = "23";
 		v.s = null;
 		
-		var listener = function (old:Int, val:Int) { trace('a updated from $old to $val'); } 
+		var listener = function (old:Float, val:MyInt) { trace('a updated from $old to $val'); } 
 		v.a.bind(listener);
 		
 		v.a = 4;
