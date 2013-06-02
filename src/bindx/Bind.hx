@@ -41,25 +41,28 @@ class Bind {
 		switch (field.expr) {
 			
 			case EField(e, f):
-				var type = Context.typeof(e);
-				switch (type) {
-					
-					case TInst(t, _): 
-						var classType = t.get();
-						if (!classType.interfaces.exists(function (i) return i.t.toString() == "bindx.IBindable")) {
-							Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
-						}
-					
-					case _: Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
-				}
 				
+				checkField(e);
 				checkFunction(listener, Context.typeof(field), bind);
-				
 				return { e:e, f:f };
 			
 			case _ : 
 				Context.error('first parameter must be field call', field.pos);
 				return null;
+		}
+	}
+	
+	static private function checkField(e:Expr) {
+		var type = Context.typeof(e);
+		switch (type) {
+			
+			case TInst(t, _): 
+				var classType = t.get();
+				if (!classType.interfaces.exists(function (i) return i.t.toString() == "bindx.IBindable")) {
+					Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
+				}
+			
+			case _: Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
 		}
 	}
 	

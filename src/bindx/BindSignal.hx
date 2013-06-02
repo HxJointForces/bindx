@@ -54,13 +54,14 @@ class BindSignal {
 	}
 	
 	public function add(type:String, listener:BindingListener<Dynamic>) {
-		var ls = if (!listeners.exists(type)) {
-					needCopy[type] = 0;
-					listeners[type] = [];
-				} else if (needCopy[type] > 0) {
-					needCopy[type] = needCopy[type] - 1;
-					listeners[type] = listeners[type].copy();
-				} else listeners[type];
+		var ls;
+		if (!listeners.exists(type)) {
+			needCopy[type] = 0;
+			listeners[type] = ls = [];
+		} else if (needCopy[type] > 0) {
+			needCopy[type] = needCopy[type] - 1;
+			listeners[type] = ls = listeners[type].copy();
+		} else ls = listeners[type];
 		
 		ls.remove(listener);
 		ls.push(listener);
@@ -68,10 +69,11 @@ class BindSignal {
 	
 	public function remove(type:String, listener:BindingListener<Dynamic>) {
 		if (!listeners.exists(type)) return;
-		var ls = if (needCopy[type] > 0) {
-					needCopy[type] = needCopy[type] - 1;
-					listeners[type] = listeners[type].copy();
-				} else listeners[type];
+		var ls;
+		if (needCopy[type] > 0) {
+			needCopy[type] = needCopy[type] - 1;
+			listeners[type] = ls = listeners[type].copy();
+		} else ls = listeners[type];
 		
 		ls.remove(listener);
 		if (ls.length == 0) {

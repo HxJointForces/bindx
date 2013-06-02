@@ -15,7 +15,6 @@ class BindMacros
 	#if macro
 	static inline var BINDINGS_FIELD = "__bindings__";
 	static inline var BINDING_META = "bindable";
-	
 	#end
 	
 	public static function build():Array<Field> {
@@ -84,7 +83,7 @@ class BindMacros
 							
 						case _: Context.warning("unknown setter accesssor: " + set, f.pos);
 					}
-				case _: Context.warning("only variables must be bindable", f.pos);
+				case _: // functions
 			}
 		}
 		
@@ -131,7 +130,7 @@ class BindMacros
 				expr: macro {
 					var __oldValue__ = $i { name };
 					$i { name } = __value__;
-					__bindings__.dispatch($v{name}, __oldValue__, $i{name});
+					$i{ BINDINGS_FIELD }.dispatch($v { name }, __oldValue__, $i { name } );
 					return __value__;
 				}
 			})
@@ -147,13 +146,13 @@ class BindMacros
 				switch (e.expr) {
 					case EConst(c):
 						macro {
-							__bindings__.dispatch($v{setterField}, __oldValue__, $i{setterField});
+							$i{ BINDINGS_FIELD }.dispatch($v{setterField}, __oldValue__, $i{setterField});
 							return $e;
 						}
 					case _:
 						macro {
 							${e.map(addBindingInSetter)};
-							__bindings__.dispatch($v{setterField}, __oldValue__, $i{setterField});
+							$i{ BINDINGS_FIELD }.dispatch($v{setterField}, __oldValue__, $i{setterField});
 							return $i{setterField};
 						}
 				}

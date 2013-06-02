@@ -1,4 +1,4 @@
 -cp src
--neko bin/bindx.n
+-js bin/bindx.js
 -main TestBind
 -D dump=pretty
