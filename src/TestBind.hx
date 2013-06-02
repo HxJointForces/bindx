@@ -43,7 +43,7 @@ class TestBind
 		
 		v.a = 5;
 		
-		Bind.notify(v.a);
+		//Bind.notify(v.a);
 		
 		
 	}
