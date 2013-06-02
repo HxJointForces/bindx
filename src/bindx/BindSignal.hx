@@ -6,13 +6,12 @@ package bindx;
  */
 
 typedef BindingListener<T> = T->T->Void;
+
 typedef GlobalBindingListener<T> = String->T->T->Void;
 
-class BindSignal
-{
+class BindSignal {
 
-	public function new() 
-	{
+	public function new() {
 		clear();
 	}
 	

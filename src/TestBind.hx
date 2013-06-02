@@ -38,7 +38,7 @@ class TestBind
 		v.def = 12;
 		v.def = 14;
 		
-		v.s.bind(function (f, t) { $type(f); } );
+		v.s.bind(function (f, t) { $type(f); $type(t); } );
 		v.s = "23";
 		v.s = null;
 		
