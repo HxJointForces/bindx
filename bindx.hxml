@@ -1,7 +1,5 @@
 -cp src
--swf bin/bindx.swf
--swf-header 800:600:30:FFFFFF
---flash-strict
--swf-version 11
+-neko bin/bindx.n
 -main TestBind
--D dump=pretty
+--times
+-D macro-times

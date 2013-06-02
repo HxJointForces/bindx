@@ -17,7 +17,6 @@ class TestBind
 	static function main() {
 		
 		var v = new Value();
-		//v.no = 10;
 		
 		v.bindxGlobal(function (varName:String, old:Dynamic, val:Dynamic) {
 			trace('changed $varName : $old -> $val'); 
@@ -42,32 +41,28 @@ class TestBind
 		v.a.unbindx(listener);
 		
 		v.a = 5;
-		
-		//Bind.notify(v.a);
-		
-		
 	}
 	
 }
 
 typedef MyInt = Int;
 
-class Value implements IBindable {
+@bindable class Value implements IBindable {
 	
-	@bindable public var a:MyInt;
+	public var a:MyInt;
 	
 	//@bindable public var never(default, never):Int;
 	//@bindable public var no(default, null):Int;
-	@bindable public var def(default, default):Int;
+	public var def(default, default):Int;
 	//@bindable public var dyn(default, dynamic):Int;
 	
-	@bindable public var s(default, set):String;
+	public var s(default, set):String;
 	
-	@bindable public function toString() {
+	@bindable public function toString():String {
 		return '$a + $def + $s';
 	}
 	
-	function set_s(v) {
+	function set_s(v):String {
 		if (v == null) {
 			s = "";
 			Bind.notify(this.toString);
@@ -76,6 +71,9 @@ class Value implements IBindable {
 		s = v;
 		Bind.notify(this.toString);
 		return v;
+	}
+	
+	public function test():Void {
 	}
 	
 	public function new() {

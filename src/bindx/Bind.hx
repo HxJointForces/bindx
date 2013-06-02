@@ -18,28 +18,45 @@ using Lambda;
 class Bind {
 	
 	inline static public function bindxGlobal<T>(bindable:IBindable, listener:GlobalBindingListener<T>) {
-		bindable.__bindings__.addGlobal(listener);
+		bindable.__fieldBindings__.addGlobal(listener);
 	}
 	
 	inline static public function unbindxGlobal<T>(bindable:IBindable, listener:GlobalBindingListener<T>) {
-		bindable.__bindings__.removeGlobal(listener);
+		bindable.__fieldBindings__.removeGlobal(listener);
 	}
 	
-	macro static public function bindx<T>(field:Expr, listener:ExprOf<Dynamic->Dynamic->Void>) {
+	macro static public function bindx(field:Expr, listener:ExprOf<Dynamic->Dynamic->Void>) {
 		var field = fieldBinding(field, listener, true);
-		return macro ${field.e}.__bindings__.add($v { field.f }, $listener);
+		return switch (field.classField.kind) {
+			case FVar(_,_):
+				macro ${field.e}.__fieldBindings__.add($v { field.f }, $listener);
+			case FMethod(_):
+				macro ${field.e}.__methodBindings__.add($v { field.f }, $listener);
+		}
+		
 	}
 	
-	macro static public function unbindx<T>(field:Expr, listener:ExprOf<Dynamic->Dynamic->Void>) {
+	macro static public function unbindx(field:Expr, listener:ExprOf<Dynamic->Dynamic->Void>) {
 		var field = fieldBinding(field, listener, false);
-		return macro ${field.e}.__bindings__.remove($v { field.f }, $listener);
+		return switch (field.classField.kind) {
+			case FVar(_,_):
+				macro ${field.e}.__fieldBindings__.remove($v { field.f }, $listener);
+			case FMethod(_):
+				macro ${field.e}.__methodBindings__.remove($v { field.f }, $listener);
+		}
 	}
 	
 	macro static public function notify(field:Expr) {
 		var f = checkField(field);
-		return switch (f.fieldType.kind) {
+		return switch (f.classField.kind) {
 			case FMethod(_):
-				macro $ { f.e } .__bindings__.dispatch($v { f.f }, null, $ { field } ());
+				switch (f.classField.type.follow()) {
+					case TFun(_, ret):
+						if (ret.toString() == "Void")
+							Context.error("can't notify Void return function", field.pos);
+					case _:
+				}
+				macro $ { f.e } .__methodBindings__.dispatch($v { f.f }, null, $ { field } ());
 			case FVar(_, _):
 				Context.error("notify works only with methods", field.pos);
 		}
@@ -47,21 +64,21 @@ class Bind {
 	
 	#if macro
 	
-	static function fieldBinding(field:Expr, listener:ExprOf < Dynamic -> Dynamic -> Void > , bind:Bool) {
+	inline static function fieldBinding(field:Expr, listener:ExprOf < Dynamic -> Dynamic -> Void > , bind:Bool) {
 		
 		var res = checkField(field);
 		
-		checkFunction(listener, res.fieldType, bind);
+		checkFunction(listener, res.classField, bind);
 		
 		return res;
 	}
 	
-	static private function checkField(field:Expr) {
+	inline static private function checkField(field:Expr) {
 		switch (field.expr) {
 			
 			case EField(e, f):
 				var type = Context.typeof(e);
-				var field:ClassField = null;
+				var classField:ClassField = null;
 				
 				switch (type) {
 					
@@ -75,16 +92,16 @@ class Bind {
 						for (cf in classType.fields.get()) {
 							if (cf.name == f) {
 								if (!cf.meta.has(BindMacros.BINDING_META)) {
-									Context.error("field is not bindable", e.pos);
+									Context.warning("field is not bindable", field.pos);
 								}
-								field = cf;
+								classField = cf;
 								break;
 							}
 						}
 					
 					case _: Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
 				}
-				return { e:e, f:f, eType:type, fieldType:field };
+				return { e:e, f:f, eType:type, classField:classField };
 			
 			case _ : 
 				Context.error('first parameter must be field call', field.pos);
@@ -92,17 +109,18 @@ class Bind {
 		}
 	}
 	
-	static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, field:ClassField, bind:Bool) 
+	inline static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, classField:ClassField, bind:Bool) 
 	{
-		var reassign = switch (field.kind) {
+		var reassign = switch (classField.kind) {
 						case FMethod(k): 
-							switch (field.type) {
+							switch (classField.type) {
 								case TFun(_, ret): ret;
-								case _: field.type;
+								case _: classField.type;
 							}
-						case _: field.type;
+						case _: classField.type;
 					}
-					
+		
+		var ok = false;
 		switch (listener.expr) {
 			case EFunction(_, f): // inline function
 				if (f.args.length != 2)
@@ -115,27 +133,26 @@ class Bind {
 					} else if (!Context.unify(reassign, argType.toType()))
 						Context.error('listener argument type mismatch ${reassign.toString()} vs ${argType.toString()}', listener.pos);
 				}
-				return;
+				ok = true;
 				
 			case _:
 		}
-		
-		var funcType = Context.typeof(listener);
-		
-		switch (funcType) {
+		if (!ok) {
+			var funcType = Context.typeof(listener);
 			
-			case TFun(args, ret):
-				if (args.length != 2)
-					Context.error("listener must have 2 arguments", listener.pos);
+			switch (funcType) {
 				
-				if (!Context.unify(reassign, args[0].t))
-					Context.error('listener first argument type mismatch ${reassign.toString()} vs ${args[0].t.toString()}', listener.pos);
-				
-				if (!Context.unify(reassign, args[1].t))
-					Context.error('listener second argument type mismatch ${reassign.toString()} vs ${args[1].t.toString()}', listener.pos);
+				case TFun(args, ret):
+					if (args.length != 2)
+						Context.error("listener must have 2 arguments", listener.pos);
 					
-			case _:
-				Context.error('listener must be function', listener.pos);
+					for (i in 0...2)
+						if (!Context.unify(reassign, args[i].t))
+							Context.error('listener argument type mismatch ${reassign.toString()} vs ${args[i].t.toString()}', listener.pos);
+					
+				case _:
+					Context.error('listener must be function', listener.pos);
+			}
 		}
 	}
 	#end

@@ -4,6 +4,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 
 using haxe.macro.Tools;
+using Lambda;
 
 /**
  * ...
@@ -13,48 +14,96 @@ class BindMacros
 {
 
 	#if macro
-	static public inline var BINDINGS_FIELD = "__bindings__";
+	static public inline var BINDINGS_FIELD = "__fieldBindings__";
+	static public inline var BINDINGS_METHOD = "__methodBindings__";
 	static public inline var BINDING_META = "bindable";
 	#end
 	
 	public static function build():Array<Field> {
 		
-		var res:Array<Field> = Context.getBuildFields();
+		var res = Context.getBuildFields();
 		
+		var type = Context.getLocalClass();
+		var classType = type.get();
+		var toBind = [];
 		var ctor = null;
 		var hasBindings = false;
-		var updated:Bool = false;
 		
-		for (f in res) {
-			if (f.name == "new") ctor = f;
-			if (f.name == BINDINGS_FIELD) hasBindings = true;
+		if (classType.meta.get().exists(function (m) return m.name == BINDING_META)) {
+
+			var ignoreAccess = [APrivate, AStatic, ADynamic, AMacro];
+			// first step
+			for (f in res) {
+				if (f.name == "new") {
+					ctor = f;
+					continue;
+				}
+				if (f.name == BINDINGS_FIELD) hasBindings = true;
+				
+				if (f.meta.exists(function (m) return m.name == BINDING_META)) {
+					checkField(f);
+					toBind.push(f);
+					continue;
+				}
+				
+				if (f.access.exists(function (a) return ignoreAccess.has(a))) {
+					continue;
+				}
+				
+				switch (f.kind) {
+					case FProp(_, _, _, _), FVar(_, _):
+						f.meta.push( { name:BINDING_META, params:[], pos:f.pos } );
+						toBind.push(f);
+					case FFun(_):
+				}
+			}
+		} else {
 			
-			var meta = null;
-			if (f.meta != null)
-				for (m in f.meta)
-					if (m.name == BINDING_META) {
-						meta = m;  // TODO: @bindable("foo") support
-						break;
-					}
-			if (meta == null) continue;
+			for (f in res) {
+				if (f.name == "new") {
+					ctor = f;
+					continue;
+				}
+				if (f.name == BINDINGS_FIELD) hasBindings = true;
+				
+				if (!f.meta.exists(function (m) return m.name == BINDING_META))
+					continue;
+				
+				checkField(f);
+				
+				toBind.push(f);
+			}
+		}
+		
+		var updated = false;
+		
+		var add = [];
+		for (f in toBind) {
 			
-			if (Lambda.has(f.access, AStatic)) 
-				Context.warning("can't bind static fields", f.pos);
-			
+			switch (f.kind) {
+				case FFun(fun):
+					if (fun.ret == null)
+						Context.error("unknown return type", f.pos);
+					if (fun.ret.toString() == "Void")
+						Context.error("can't bind Void function", f.pos);
+					continue;
+				case _:
+			}
+				
 			switch (f.kind) {
 				case FVar(ct, e):
 					f.kind = FProp("default", "set", ct, e);
-					res.push(genSetter(f.name, ct, f.pos));
+					add.push(genSetter(f.name, ct, f.pos));
 					updated = true;
 					
 				case FProp(get, set, ct, e):
 					switch (set) {
 						case "never", "dynamic":
-							Context.warning('can\'t bind $set write-access variable', f.pos);
+							Context.error('can\'t bind $set write-access variable', f.pos);
 							
 						case "default", "null":
 							f.kind = FProp(get, "set", ct, e);
-							res.push(genSetter(f.name, ct, f.pos));
+							add.push(genSetter(f.name, ct, f.pos));
 							updated = true;
 							
 						case "set":
@@ -99,7 +148,12 @@ class BindMacros
 				pos:Context.currentPos(),
 				access: [APublic],
 				kind:FVar(macro : bindx.BindSignal)
-				
+			});
+			res.push( {
+				name:BINDINGS_METHOD,
+				pos:Context.currentPos(),
+				access: [APublic],
+				kind:FVar(macro : bindx.BindSignal)
 			});
 		}
 		
@@ -107,17 +161,30 @@ class BindMacros
 			case FFun(f):
 				f.expr = macro {
 					$i { BINDINGS_FIELD } = new bindx.BindSignal();
+					$i { BINDINGS_METHOD } = new bindx.BindSignal();
 					${f.expr}
 				}
 			case _:
 		}
 		
-		return res;
+		return res.concat(add);
 	}
 	
 	#if macro
 	
-	static private function genSetter(name:String, type:ComplexType, pos:Position):Field 
+	inline static function checkField(f:Field) {
+		for (a in f.access) {
+			switch (a) {
+				case AStatic: Context.error("can't bind static fields", f.pos);
+				//case AInline: Context.error("can't bind inline fields", f.pos);
+				case AMacro: Context.error("can't bind macro fields", f.pos);
+				case ADynamic: Context.error("can't bind dynamic fields", f.pos);
+				case _:
+			}
+		}
+	}
+	
+	inline static private function genSetter(name:String, type:ComplexType, pos:Position):Field 
 	{
 		return {
 			name: "set_" + name,
