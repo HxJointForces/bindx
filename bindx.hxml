@@ -1,4 +1,7 @@
 -cp src
--js bin/bindx.js
+-swf bin/bindx.swf
+-swf-header 800:600:30:FFFFFF
+--flash-strict
+-swf-version 11
 -main TestBind
 -D dump=pretty

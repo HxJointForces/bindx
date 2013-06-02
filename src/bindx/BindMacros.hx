@@ -13,8 +13,8 @@ class BindMacros
 {
 
 	#if macro
-	static inline var BINDINGS_FIELD = "__bindings__";
-	static inline var BINDING_META = "bindable";
+	static public inline var BINDINGS_FIELD = "__bindings__";
+	static public inline var BINDING_META = "bindable";
 	#end
 	
 	public static function build():Array<Field> {
@@ -129,6 +129,7 @@ class BindMacros
 				args:[{name:"__value__", opt:false, type:type}],
 				expr: macro {
 					var __oldValue__ = $i { name };
+					if (__oldValue__ == __value__) return __value__;
 					$i { name } = __value__;
 					$i{ BINDINGS_FIELD }.dispatch($v { name }, __oldValue__, $i { name } );
 					return __value__;

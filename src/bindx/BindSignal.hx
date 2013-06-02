@@ -82,7 +82,7 @@ class BindSignal {
 		}
 	}
 	
-	public function dispatch(type:String, oldValue:Dynamic, newValue:Dynamic) {
+	public function dispatch(type:String, ?oldValue:Dynamic, ?newValue:Dynamic) {
 		if (globalListeners.length > 0) {
 			needCopyGlobal ++;
 			for (g in globalListeners) g(type, oldValue, newValue);

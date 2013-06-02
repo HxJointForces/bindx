@@ -19,25 +19,33 @@ class TestBind
 		var v = new Value();
 		//v.no = 10;
 		
-		v.bindGlobal(function (varName:String, old:Dynamic, val:Dynamic) {
+		v.bindxGlobal(function (varName:String, old:Dynamic, val:Dynamic) {
 			trace('changed $varName : $old -> $val'); 
 		});
+		
+		var methodListener = function (_, newValue:String) { trace("listener " + newValue); };
+		v.toString.bindx(function (_, newValue) { trace(newValue); } );
+		v.toString.bindx(methodListener);
 		
 		v.def = 12;
 		v.def = 14;
 		
-		v.s.bind(function (f, t) { $type(f); $type(t); } );
+		v.s.bindx(function (f, t) { $type(f); $type(t); } );
 		v.s = "23";
 		v.s = null;
 		
 		var listener = function (old:Float, val:MyInt) { trace('a updated from $old to $val'); } 
-		v.a.bind(listener);
+		v.a.bindx(listener);
 		
 		v.a = 4;
 		
-		v.a.unbind(listener);
+		v.a.unbindx(listener);
 		
 		v.a = 5;
+		
+		Bind.notify(v.a);
+		
+		
 	}
 	
 }
@@ -55,12 +63,19 @@ class Value implements IBindable {
 	
 	@bindable public var s(default, set):String;
 	
+	@bindable public function toString() {
+		return '$a + $def + $s';
+	}
+	
 	function set_s(v) {
 		if (v == null) {
 			s = "";
+			Bind.notify(this.toString);
 			return s;
 		}
-		return s = v;
+		s = v;
+		Bind.notify(this.toString);
+		return v;
 	}
 	
 	public function new() {
