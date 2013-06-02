@@ -40,7 +40,7 @@ class BindMacros
 			if (meta == null) continue;
 			
 			if (Lambda.has(f.access, AStatic)) 
-				Context.error("can't bind static fields", f.pos);
+				Context.warning("can't bind static fields", f.pos);
 			
 			switch (f.kind) {
 				case FVar(ct, e):
@@ -51,7 +51,7 @@ class BindMacros
 				case FProp(get, set, ct, e):
 					switch (set) {
 						case "never", "dynamic":
-							Context.error('can\'t bind $set write-access variable', f.pos);
+							Context.warning('can\'t bind $set write-access variable', f.pos);
 							
 						case "default", "null":
 							f.kind = FProp(get, "set", ct, e);
@@ -68,26 +68,23 @@ class BindMacros
 								break;
 							}
 							if (setter == null) 
-								Context.error("can't find setter", f.pos);
+								Context.error("can't find setter: " + methodName, f.pos);
 							
 							switch (setter.kind) {
 								case FFun(fn):
 									setterField = f.name;
-									fn.ret = ct;
-									var arg = fn.args[0];
-									arg.type = ct;
 									fn.expr = macro {
 										var __oldValue__ = $i { f.name };
 										${fn.expr.map(addBindingInSetter)};
 									}
 									
-								case _: throw "setter must be function";
+								case _: Context.error("setter must be function", setter.pos);
 							}
 							updated = true;
 							
-						case _: throw "unknown setter accesssor - " + set;
+						case _: Context.warning("unknown setter accesssor: " + set, f.pos);
 					}
-				case _: Context.error("only variables must be bindable", f.pos);
+				case _: Context.warning("only variables must be bindable", f.pos);
 			}
 		}
 		
@@ -102,7 +99,7 @@ class BindMacros
 				name:BINDINGS_FIELD,
 				pos:Context.currentPos(),
 				access: [APublic],
-				kind:FVar(macro : bindx.BindingSignal)
+				kind:FVar(macro : bindx.BindSignal)
 				
 			});
 		}
@@ -110,7 +107,7 @@ class BindMacros
 		switch (ctor.kind) {
 			case FFun(f):
 				f.expr = macro {
-					$i { BINDINGS_FIELD } = new bindx.BindingSignal();
+					$i { BINDINGS_FIELD } = new bindx.BindSignal();
 					${f.expr}
 				}
 			case _:

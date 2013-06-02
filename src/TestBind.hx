@@ -30,22 +30,35 @@ class TestBind
 		
 		var v = new Value();
 		//v.no = 10;
-		trace(v.a);
-		v.a.on(function (old:Float, val:Int) trace('a updated from $old to $val'));
-		//v.__bindings__.add(function (varName:String) { trace("updated: " + varName); } );
+		
+		v.bindGlobal(function (varName:String, old:Dynamic, val:Dynamic) {
+			trace('changed $varName : $old -> $val'); 
+		});
+		
 		v.def = 12;
 		v.def = 14;
+		
+		v.s.bind(function (f, t) { $type(f); } );
 		v.s = "23";
 		v.s = null;
+		
+		var listener = function (old:Int, val:Int) { trace('a updated from $old to $val'); } 
+		v.a.bind(listener);
+		
 		v.a = 4;
+		
+		v.a.unbind(listener);
+		
 		v.a = 5;
 	}
 	
 }
 
+typedef MyInt = Int;
+
 class Value implements IBindable {
 	
-	@bindable public var a:Int;
+	@bindable public var a:MyInt;
 	
 	//@bindable public var never(default, never):Int;
 	//@bindable public var no(default, null):Int;
