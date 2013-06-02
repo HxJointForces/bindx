@@ -15,15 +15,17 @@ class BindMacros
 	#if macro
 	static inline var BINDINGS_FIELD = "__bindings__";
 	static inline var BINDING_META = "bindable";
+	
 	#end
 	
 	public static function build():Array<Field> {
+		
 		var res:Array<Field> = Context.getBuildFields();
 		
-		var updated = false;
 		var ctor = null;
 		var hasBindings = false;
 		
+		var bindables = [];
 		for (f in res) {
 			if (f.name == "new") ctor = f;
 			if (f.name == BINDINGS_FIELD) hasBindings = true;
@@ -37,13 +39,13 @@ class BindMacros
 					}
 			if (meta == null) continue;
 			
-			updated = true;
 			if (Lambda.has(f.access, AStatic)) 
 				Context.error("can't bind static fields", f.pos);
 			switch (f.kind) {
 				case FVar(ct, e):
 					f.kind = FProp("default", "set", ct, e);
 					res.push(genSetter(f.name, ct, f.pos));
+					bindables.push(f.name);
 					
 				case FProp(get, set, ct, e):
 					switch (set) {
@@ -53,8 +55,11 @@ class BindMacros
 						case "default", "null":
 							f.kind = FProp(get, "set", ct, e);
 							res.push(genSetter(f.name, ct, f.pos));
+							bindables.push(f.name);
 							
 						case "set":
+							f.kind = FProp(get, set, ct, e);
+							
 							var methodName = "set_" + f.name;
 							var setter = null;
 							for (f in res) if (f.name == methodName) {
@@ -67,16 +72,24 @@ class BindMacros
 							switch (setter.kind) {
 								case FFun(fn):
 									setterField = f.name;
-									fn.expr = fn.expr.map(addBindingInSetter);
+									fn.ret = ct;
+									var arg = fn.args[0];
+									arg.type = ct;
+									fn.expr = macro {
+										var __oldValue__ = $i { f.name };
+										${fn.expr.map(addBindingInSetter)};
+									}
+									
 								case _: throw "setter must be function";
 							}
+							bindables.push(f.name);
 						case _: throw "unknown setter accesssor - " + set;
 					}
 				case _: Context.error("only variables must be bindable", f.pos);
 			}
 		}
 		
-		if (!updated) return res;
+		if (bindables.length == 0) return res;
 		
 		if (ctor == null) {
 			Context.error("define constructor for binding support", Context.currentPos());
@@ -87,7 +100,7 @@ class BindMacros
 				name:BINDINGS_FIELD,
 				pos:Context.currentPos(),
 				access: [APublic],
-				kind:FVar(macro : deep.events.Signal.Signal1<String>)
+				kind:FVar(macro : bindx.BindingSignal)
 				
 			});
 		}
@@ -95,7 +108,7 @@ class BindMacros
 		switch (ctor.kind) {
 			case FFun(f):
 				f.expr = macro {
-					__bindings__ = new deep.events.Signal.Signal1();
+					$i { BINDINGS_FIELD } = new bindx.BindingSignal();
 					${f.expr}
 				}
 			case _:
@@ -117,8 +130,9 @@ class BindMacros
 				params:[],
 				args:[{name:"__value__", opt:false, type:type}],
 				expr: macro {
+					var __oldValue__ = $i { name };
 					$i { name } = __value__;
-					__bindings__.dispatch($v{name});
+					__bindings__.dispatch($v{name}, __oldValue__, $i{name});
 					return __value__;
 				}
 			})
@@ -134,13 +148,13 @@ class BindMacros
 				switch (e.expr) {
 					case EConst(c):
 						macro {
-							__bindings__.dispatch($v{setterField});
+							__bindings__.dispatch($v{setterField}, __oldValue__, $i{setterField});
 							return $e;
 						}
 					case _:
 						macro {
-							$e;
-							__bindings__.dispatch($v{setterField});
+							${e.map(addBindingInSetter)};
+							__bindings__.dispatch($v{setterField}, __oldValue__, $i{setterField});
 							return $i{setterField};
 						}
 				}

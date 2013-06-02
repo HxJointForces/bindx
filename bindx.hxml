@@ -4,3 +4,4 @@
 --flash-strict
 -swf-version 11
 -main TestBind
+-D dump=pretty
