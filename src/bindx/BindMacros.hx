@@ -75,7 +75,9 @@ class BindMacros
 			}
 		}
 		
-		var updated = false;
+		if (ctor == null) {
+			Context.error("define constructor for binding support", Context.currentPos());
+		}
 		
 		var add = [];
 		for (f in toBind) {
@@ -94,7 +96,6 @@ class BindMacros
 				case FVar(ct, e):
 					f.kind = FProp("default", "set", ct, e);
 					add.push(genSetter(f.name, ct, f.pos));
-					updated = true;
 					
 				case FProp(get, set, ct, e):
 					switch (set) {
@@ -104,7 +105,6 @@ class BindMacros
 						case "default", "null":
 							f.kind = FProp(get, "set", ct, e);
 							add.push(genSetter(f.name, ct, f.pos));
-							updated = true;
 							
 						case "set":
 							f.kind = FProp(get, set, ct, e);
@@ -128,18 +128,11 @@ class BindMacros
 									
 								case _: Context.error("setter must be function", setter.pos);
 							}
-							updated = true;
 							
 						case _: Context.warning("unknown setter accesssor: " + set, f.pos);
 					}
 				case _: // functions
 			}
-		}
-		
-		if (!updated) return res;
-		
-		if (ctor == null) {
-			Context.error("define constructor for binding support", Context.currentPos());
 		}
 		
 		if (!hasBindings) {
