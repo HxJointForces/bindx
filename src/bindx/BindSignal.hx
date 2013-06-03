@@ -5,13 +5,61 @@ package bindx;
  * @author deep <system.grand@gmail.com>
  */
 
-typedef BindingListener<T> = T->T->Void;
+typedef FieldListener<T> = T->T->Void;
+typedef GlobalFieldListener<T> = String->T->T->Void;
 
-typedef GlobalBindingListener<T> = String->T->T->Void;
+typedef MethodListener<T> = T->Void;
 
-class BindSignal {
+typedef GlobalMethodListener<T> = String->T->Void;
+
+class FieldsBindSignal extends BindSignal<FieldListener<Dynamic>, GlobalFieldListener<Dynamic>> {
 
 	public function new() {
+		super();
+	}
+
+	public function dispatch(type:String, oldValue:Dynamic, newValue:Dynamic) {
+		if (globalListeners.length > 0) {
+			needCopyGlobal ++;
+			for (g in globalListeners) g(type, oldValue, newValue);
+			if (needCopyGlobal > 0) needCopyGlobal --;
+		}
+
+		if (!listeners.exists(type)) return;
+
+		var ls = listeners[type];
+		needCopy[type] = needCopy[type] + 1;
+		for (l in ls) l(oldValue, newValue);
+		if (needCopy[type] > 0) needCopy[type] = needCopy[type] - 1;
+	}
+}
+
+class MethodsBindSignal extends BindSignal<MethodListener<Dynamic>, GlobalMethodListener<Dynamic>> {
+
+	public function new() {
+		super();
+	}
+
+	public function dispatch(type:String, newValue:Dynamic) {
+		if (globalListeners.length > 0) {
+			needCopyGlobal ++;
+			for (g in globalListeners) g(type, newValue);
+			if (needCopyGlobal > 0) needCopyGlobal --;
+		}
+
+		if (!listeners.exists(type)) return;
+
+		var ls = listeners[type];
+		needCopy[type] = needCopy[type] + 1;
+		for (l in ls) l(newValue);
+		if (needCopy[type] > 0) needCopy[type] = needCopy[type] - 1;
+	}
+}
+
+
+class BindSignal<ListenerType, GlobalListenerType> {
+
+	function new() {
 		clear();
 	}
 	
@@ -28,13 +76,13 @@ class BindSignal {
 		globalListeners = null;
 	}
 	
-	var globalListeners:Array<GlobalBindingListener<Dynamic>>;
+	var globalListeners:Array<GlobalListenerType>;
 	var needCopyGlobal:Int;
 	
-	var listeners:Map < String, Array < BindingListener<Dynamic> >> ;
+	var listeners:Map < String, Array < ListenerType >> ;
 	var needCopy:Map<String, Int>;
 	
-	public function addGlobal(listener:GlobalBindingListener<Dynamic>) {
+	public function addGlobal(listener:GlobalListenerType) {
 		if (needCopyGlobal > 0) {
 			globalListeners = globalListeners.copy();
 			needCopyGlobal --;
@@ -44,7 +92,7 @@ class BindSignal {
 		globalListeners.push(listener);
 	}
 	
-	public function removeGlobal(listener:GlobalBindingListener<Dynamic>) {
+	public function removeGlobal(listener:GlobalListenerType) {
 		if (needCopyGlobal > 0) {
 			globalListeners = globalListeners.copy();
 			needCopyGlobal --;
@@ -53,7 +101,7 @@ class BindSignal {
 		globalListeners.remove(listener);
 	}
 	
-	public function add(type:String, listener:BindingListener<Dynamic>) {
+	public function add(type:String, listener:ListenerType) {
 		var ls;
 		if (!listeners.exists(type)) {
 			needCopy[type] = 0;
@@ -67,7 +115,7 @@ class BindSignal {
 		ls.push(listener);
 	}
 	
-	public function remove(type:String, listener:BindingListener<Dynamic>) {
+	public function remove(type:String, listener:ListenerType) {
 		if (!listeners.exists(type)) return;
 		var ls;
 		if (needCopy[type] > 0) {
@@ -81,20 +129,4 @@ class BindSignal {
 			needCopy.remove(type);
 		}
 	}
-	
-	public function dispatch(type:String, ?oldValue:Dynamic, ?newValue:Dynamic) {
-		if (globalListeners.length > 0) {
-			needCopyGlobal ++;
-			for (g in globalListeners) g(type, oldValue, newValue);
-			if (needCopyGlobal > 0) needCopyGlobal --;
-		}
-		
-		if (!listeners.exists(type)) return;
-		
-		var ls = listeners[type];
-		needCopy[type] = needCopy[type] + 1;
-		for (l in ls) l(oldValue, newValue);
-		if (needCopy[type] > 0) needCopy[type] = needCopy[type] - 1;
-	}
-	
 }

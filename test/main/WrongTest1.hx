@@ -1,5 +1,9 @@
-package wrong;
+package main;
+
 import AbstractBindxTest.SimpleValue;
+
+using bindx.Bind;
+
 class WrongTest1  extends AbstractBindxTest
 {
 	function createValue() : SimpleValue {
@@ -10,6 +14,9 @@ class WrongTest1  extends AbstractBindxTest
 		var v = createValue();
 
 		v.def.bindx(function(_,_) {});
+		v.toString.bindx(function(_) {});
+
+		assertTrue(true);
 	}
 
 	function createValue2() {
@@ -20,5 +27,7 @@ class WrongTest1  extends AbstractBindxTest
 		var v = createValue2();
 
 		v.def.bindx(function(_,_) {});
+
+		assertTrue(true);
 	}
 }

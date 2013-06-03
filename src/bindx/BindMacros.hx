@@ -142,21 +142,21 @@ class BindMacros
 				name:FIELD_BINDINGS_NAME,
 				pos:Context.currentPos(),
 				access: [APublic],
-				kind:FVar(macro : bindx.BindSignal)
+				kind:FVar(macro : bindx.BindSignal.FieldsBindSignal)
 			});
 			res.push( {
 				name:METHOD_BINDINGS_NAME,
 				pos:Context.currentPos(),
 				access: [APublic],
-				kind:FVar(macro : bindx.BindSignal)
+				kind:FVar(macro : bindx.BindSignal.MethodsBindSignal)
 			});
 		}
 		
 		switch (ctor.kind) {
 			case FFun(f):
 				f.expr = macro {
-					$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal();
-					$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal();
+					$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal.FieldsBindSignal();
+					$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal.MethodsBindSignal();
 					${f.expr}
 				}
 			case _:

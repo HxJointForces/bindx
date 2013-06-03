@@ -18,7 +18,7 @@ class TestFunctionBind extends AbstractBindxTest
 		var times = 5;
 		var bindingDispatched = 0;
 
-		v.returnMyObj.bindx(function(_, _) bindingDispatched++ );
+		v.returnMyObj.bindx(function(_) bindingDispatched++ );
 
 		for(i in 0...times)
 			Bind.notify(v.returnMyObj);
@@ -32,7 +32,7 @@ class TestFunctionBind extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		v.returnMyObj.bindx(function(_, _) {
+		v.returnMyObj.bindx(function(_) {
 			assertEquals(0, bindingDispatched);
 
 			assertEquals(obj, v.returnMyObj());
@@ -49,7 +49,7 @@ class TestFunctionBind extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		v.returnMyObj.unbindx(function(_, _) bindingDispatched++ );
+		v.returnMyObj.unbindx(function(_) bindingDispatched++ );
 
 		Bind.notify(v.returnMyObj);
 
