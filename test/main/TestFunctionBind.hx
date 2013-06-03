@@ -7,12 +7,13 @@ using bindx.Bind;
 
 class TestFunctionBind extends AbstractBindxTest
 {
-	function createFunctionValue() : BindableFunctionValue{
-		return new BindableFunctionValue(this);
+	function createFunctionValue(obj : Dynamic) : BindableFunctionValue{
+		return new BindableFunctionValue(obj);
 	}
 
 	public function testMultiFunctionDispatch() {
-		var v = createFunctionValue();
+		var obj = {};
+		var v = createFunctionValue(obj);
 
 		var times = 5;
 		var bindingDispatched = 0;
@@ -26,14 +27,15 @@ class TestFunctionBind extends AbstractBindxTest
 	}
 
 	public function testBind() {
-		var v = createFunctionValue();
+		var obj = {};
+		var v = createFunctionValue(obj);
 
 		var bindingDispatched = 0;
 
 		v.returnMyObj.bindx(function(_, _) {
 			assertEquals(0, bindingDispatched);
 
-			assertEquals(this, v.returnMyObj());
+			assertEquals(obj, v.returnMyObj());
 
 			bindingDispatched++;
 		});
