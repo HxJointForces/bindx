@@ -1,10 +1,12 @@
 package ;
 
+import main.TestSubClass;
 import wrong.WrongTests;
 import main.WrongTest1;
 import main.TestFunctionBind;
 import main.TestClassLevel;
 import main.TestSimple;
+
 class TestRunner extends haxe.unit.TestRunner
 {
 	public static function main()
@@ -15,6 +17,7 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new TestFunctionBind());
 		runner.add(new WrongTest1());
 		runner.add(new WrongTests());
+		runner.add(new TestSubClass());
 		runner.run();
 	}
 }

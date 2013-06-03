@@ -1,5 +1,6 @@
 package bindx;
 
+import haxe.macro.Type.ClassType;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -19,20 +20,30 @@ class BindMacros
 	static public inline var FIELD_BINDINGS_NAME = "__fieldBindings__";
 	static public inline var METHOD_BINDINGS_NAME = "__methodBindings__";
 	static public inline var BINDING_META_NAME = "bindable";
+
+	static var processed:Map<String, Bool> = new Map();
 	#end
 	
 	public static function build():Array<Field> {
-		
+
 		var res = Context.getBuildFields();
 		
 		var type = Context.getLocalClass();
-		var classType = type.get();
+		var typeName = type.toString();
+		if (processed.exists(typeName)) return res;
+		processed[typeName] = true;
+
+		var classType:ClassType = type.get();
+
+		var injectSignals = if (classType.superClass != null)
+			!isIBindable(classType.superClass.t.get())
+			else true;
+
 		var toBind = [];
 		var ctor = null;
 		var hasBindings = false;
-		
-		if (classType.meta.get().exists(function (m) return m.name == BINDING_META_NAME)) {
 
+		if (classType.meta.get().exists(function (m) return m.name == BINDING_META_NAME)) {
 			var ignoreAccess = [APrivate, AStatic, ADynamic, AMacro];
 			// first step
 			for (f in res) {
@@ -77,8 +88,11 @@ class BindMacros
 			}
 		}
 		
-		if (ctor == null) {
-			Context.error("define constructor for binding support", Context.currentPos());
+		if (injectSignals && ctor == null) {
+			Context.error(
+				"define constructor for binding support",
+				res.length > 0 ? res[0].pos : Context.currentPos()
+			);
 		}
 		
 		var add = [];
@@ -136,32 +150,34 @@ class BindMacros
 				case _: // functions
 			}
 		}
-		
-		if (!hasBindings) {
-			res.push( {
-				name:FIELD_BINDINGS_NAME,
-				pos:Context.currentPos(),
-				access: [APublic],
-				kind:FVar(macro : bindx.BindSignal.FieldsBindSignal)
-			});
-			res.push( {
-				name:METHOD_BINDINGS_NAME,
-				pos:Context.currentPos(),
-				access: [APublic],
-				kind:FVar(macro : bindx.BindSignal.MethodsBindSignal)
-			});
+
+		if (injectSignals) {
+			if (!hasBindings) {
+				res.push( {
+					name:FIELD_BINDINGS_NAME,
+					pos:Context.currentPos(),
+					access: [APublic],
+					kind:FVar(macro : bindx.BindSignal.FieldsBindSignal)
+				});
+				res.push( {
+					name:METHOD_BINDINGS_NAME,
+					pos:Context.currentPos(),
+					access: [APublic],
+					kind:FVar(macro : bindx.BindSignal.MethodsBindSignal)
+				});
+			}
+
+			switch (ctor.kind) {
+				case FFun(f):
+					f.expr = macro {
+						$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal.FieldsBindSignal();
+						$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal.MethodsBindSignal();
+						${f.expr}
+					}
+				case _:
+			}
 		}
-		
-		switch (ctor.kind) {
-			case FFun(f):
-				f.expr = macro {
-					$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal.FieldsBindSignal();
-					$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal.MethodsBindSignal();
-					${f.expr}
-				}
-			case _:
-		}
-		
+
 		return res.concat(add);
 	}
 	
@@ -224,6 +240,18 @@ class BindMacros
 				
 			case _: e.map(addBindingInSetter);
 		}
+	}
+
+	public static function isIBindable(classType:ClassType) {
+		if (classType == null) return false;
+		while (classType != null) {
+			if (classType.interfaces.exists(
+				function (i) return i.t.toString() == "bindx.IBindable")
+			) return true;
+
+			classType = classType.superClass != null ? classType.superClass.t.get() : null;
+		}
+		return false;
 	}
 	#end
 	

@@ -82,19 +82,21 @@ class Bind {
 					
 					case TInst(t, _): 
 						var classType = t.get();
-						if (!classType.interfaces.exists(
-								function (i) return i.t.toString() == "bindx.IBindable")
-							)
+						if (!BindMacros.isIBindable(classType))
 							Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
-						
-						for (cf in classType.fields.get()) {
-							if (cf.name == f) {
-								if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
-									Context.warning("field is not bindable", field.pos);
+
+						while (classType != null) {
+							for (cf in classType.fields.get()) {
+								if (cf.name == f) {
+									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
+										Context.warning("field is not bindable", field.pos);
+									}
+									classField = cf;
+									break;
 								}
-								classField = cf;
-								break;
 							}
+							if (classField != null) break;
+							classType = classType.superClass != null ? classType.superClass.t.get() : null;
 						}
 					
 					case _: Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
@@ -107,9 +109,9 @@ class Bind {
 		}
 	}
 	
-	inline static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, classField:ClassField, bind:Bool) 
-	{
-		var argsNum = switch (classField.kind) {
+	inline static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, classField:ClassField, bind:Bool) {
+
+			var argsNum = switch (classField.kind) {
 			case FMethod(_): 1;
 			case FVar(_, _): 2;
 		}
