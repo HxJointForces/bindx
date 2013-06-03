@@ -5,37 +5,48 @@ import bindx.IBindable;
 
 using bindx.Bind;
 
-/**
- * ...
- * @author deep <system.grand@gmail.com>
- */
+class TestBindx extends TestCase
+{
+	public function testBind() {
+		var v : SimpleValue = new SimpleValue();
+		
+		var oldDef = v.def;
+		var newDef = 42;
+		var bindingDispatched = 0;
 
-class TestBindx extends AbstractBindxTest
+		v.def.bindx(function(oldValue, newValue) {
+			assertEquals(0, bindingDispatched);
+
+			assertEquals(oldDef, oldValue);
+			assertEquals(newDef, newValue);
+
+			bindingDispatched++;
+		});
+
+		v.def = newDef;
+	}
+
+	public function testUnbind() {
+		var v : SimpleValue = new SimpleValue();
+
+		var bindingDispatched = 0;
+
+		v.def.unbindx(function(oldValue, newValue) {
+			bindingDispatched++;
+		});
+
+		v.def = 42;
+
+		assertEquals(0, bindingDispatched);
+	}
+
+}
+
+
+class SimpleValue implements IBindable
 {
 	@bindable public var def:Int;
 
-	@bindable public function toString():String {
-		return '$def!';
-	}
-
 	public function new() {
-		super();
 	}
-
-	public function testBasic() {
-		var oldDef = this.def;
-		var newDef = 12;
-		var bindingDispatched = 0;
-
-		this.def.bindx(function(oldValue, newValue) {
-			bindingDispatched++;
-			assertEquals(oldDef, oldValue);
-			assertEquals(newDef, newValue);
-		});
-
-		this.def = newDef;
-
-		assertEquals(1, bindingDispatched);
-	}
-
 }
