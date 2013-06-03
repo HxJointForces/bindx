@@ -1,10 +1,8 @@
 package bindx;
 
-import haxe.macro.ComplexTypeTools;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
-import haxe.macro.TypeTools;
 
 import bindx.BindSignal;
 
