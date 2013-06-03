@@ -91,7 +91,7 @@ class Bind {
 						
 						for (cf in classType.fields.get()) {
 							if (cf.name == f) {
-								if (!cf.meta.has(BindMacros.BINDING_META)) {
+								if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
 									Context.warning("field is not bindable", field.pos);
 								}
 								classField = cf;

@@ -14,9 +14,11 @@ class BindMacros
 {
 
 	#if macro
-	static public inline var BINDINGS_FIELD = "__fieldBindings__";
-	static public inline var BINDINGS_METHOD = "__methodBindings__";
-	static public inline var BINDING_META = "bindable";
+	static public inline var OLD_VALUE_NAME = "__oldValue__";
+	static public inline var VALUE_NAME = "__value__";
+	static public inline var FIELD_BINDINGS_NAME = "__fieldBindings__";
+	static public inline var METHOD_BINDINGS_NAME = "__methodBindings__";
+	static public inline var BINDING_META_NAME = "bindable";
 	#end
 	
 	public static function build():Array<Field> {
@@ -29,7 +31,7 @@ class BindMacros
 		var ctor = null;
 		var hasBindings = false;
 		
-		if (classType.meta.get().exists(function (m) return m.name == BINDING_META)) {
+		if (classType.meta.get().exists(function (m) return m.name == BINDING_META_NAME)) {
 
 			var ignoreAccess = [APrivate, AStatic, ADynamic, AMacro];
 			// first step
@@ -38,9 +40,9 @@ class BindMacros
 					ctor = f;
 					continue;
 				}
-				if (f.name == BINDINGS_FIELD) hasBindings = true;
+				if (f.name == FIELD_BINDINGS_NAME) hasBindings = true;
 				
-				if (f.meta.exists(function (m) return m.name == BINDING_META)) {
+				if (f.meta.exists(function (m) return m.name == BINDING_META_NAME)) {
 					checkField(f);
 					toBind.push(f);
 					continue;
@@ -52,7 +54,7 @@ class BindMacros
 				
 				switch (f.kind) {
 					case FProp(_, _, _, _), FVar(_, _):
-						f.meta.push( { name:BINDING_META, params:[], pos:f.pos } );
+						f.meta.push( { name:BINDING_META_NAME, params:[], pos:f.pos } );
 						toBind.push(f);
 					case FFun(_):
 				}
@@ -64,9 +66,9 @@ class BindMacros
 					ctor = f;
 					continue;
 				}
-				if (f.name == BINDINGS_FIELD) hasBindings = true;
+				if (f.name == FIELD_BINDINGS_NAME) hasBindings = true;
 				
-				if (!f.meta.exists(function (m) return m.name == BINDING_META))
+				if (!f.meta.exists(function (m) return m.name == BINDING_META_NAME))
 					continue;
 				
 				checkField(f);
@@ -122,7 +124,7 @@ class BindMacros
 								case FFun(fn):
 									setterField = f.name;
 									fn.expr = macro {
-										var __oldValue__ = $i { f.name };
+										var $OLD_VALUE_NAME = $i { f.name };
 										${fn.expr.map(addBindingInSetter)};
 									}
 									
@@ -137,13 +139,13 @@ class BindMacros
 		
 		if (!hasBindings) {
 			res.push( {
-				name:BINDINGS_FIELD,
+				name:FIELD_BINDINGS_NAME,
 				pos:Context.currentPos(),
 				access: [APublic],
 				kind:FVar(macro : bindx.BindSignal)
 			});
 			res.push( {
-				name:BINDINGS_METHOD,
+				name:METHOD_BINDINGS_NAME,
 				pos:Context.currentPos(),
 				access: [APublic],
 				kind:FVar(macro : bindx.BindSignal)
@@ -153,8 +155,8 @@ class BindMacros
 		switch (ctor.kind) {
 			case FFun(f):
 				f.expr = macro {
-					$i { BINDINGS_FIELD } = new bindx.BindSignal();
-					$i { BINDINGS_METHOD } = new bindx.BindSignal();
+					$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal();
+					$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal();
 					${f.expr}
 				}
 			case _:
@@ -179,6 +181,8 @@ class BindMacros
 	
 	inline static private function genSetter(name:String, type:ComplexType, pos:Position):Field 
 	{
+		var old = macro $i { OLD_VALUE_NAME };
+		var val = macro $i { VALUE_NAME };
 		return {
 			name: "set_" + name,
 			pos: pos,
@@ -186,13 +190,13 @@ class BindMacros
 			kind:FFun( {
 				ret:type,
 				params:[],
-				args:[{name:"__value__", opt:false, type:type}],
+				args:[{name:VALUE_NAME, opt:false, type:type}],
 				expr: macro {
-					var __oldValue__ = $i { name };
-					if (__oldValue__ == __value__) return __value__;
-					$i { name } = __value__;
-					$i{ BINDINGS_FIELD }.dispatch($v { name }, __oldValue__, $i { name } );
-					return __value__;
+					var $OLD_VALUE_NAME = $i { name };
+					if ($old == $val) return $val;
+					$i { name } = $val;
+					$i{ FIELD_BINDINGS_NAME }.dispatch($v { name }, $old, $i { name } );
+					return $val;
 				}
 			})
 		}
@@ -207,13 +211,13 @@ class BindMacros
 				switch (e.expr) {
 					case EConst(c):
 						macro {
-							$i{ BINDINGS_FIELD }.dispatch($v{setterField}, __oldValue__, $i{setterField});
+							$i{ FIELD_BINDINGS_NAME }.dispatch($v{setterField}, $i{ OLD_VALUE_NAME }, $i{setterField});
 							return $e;
 						}
 					case _:
 						macro {
 							${e.map(addBindingInSetter)};
-							$i{ BINDINGS_FIELD }.dispatch($v{setterField}, __oldValue__, $i{setterField});
+							$i{ FIELD_BINDINGS_NAME }.dispatch($v{setterField}, $i{ OLD_VALUE_NAME }, $i{setterField});
 							return $i{setterField};
 						}
 				}
