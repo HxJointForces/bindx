@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.hxjointforces</groupId>
+    <artifactId>bindx</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>swf</packaging>
+
+    <build>
+        <sourceDirectory>src</sourceDirectory>
+        <testSourceDirectory>test</testSourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>com.tenderowls.opensource</groupId>
+                <artifactId>haxemojos-maven-plugin</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <swfVersion>10</swfVersion>
+                    <main>TestBind</main>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.haxe.compiler</groupId>
+                        <artifactId>haxe-compiler</artifactId>
+                        <version>3.0.0</version>
+                        <type>pom</type>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.nekovm</groupId>
+                        <artifactId>nekovm</artifactId>
+                        <version>2.0.0</version>
+                        <type>pom</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+	
+	<pluginRepositories>
+	    <pluginRepository>
+	        <id>yelbota-dropbox-repo</id>
+	        <url>http://dl.dropbox.com/u/36020926/maven/</url>
+	        <snapshots><enabled>false</enabled></snapshots>
+	        <releases><enabled>true</enabled></releases>
+	    </pluginRepository>
+	    <pluginRepository>
+	        <id>oss</id>
+	        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+	        <snapshots><enabled>true</enabled></snapshots>
+	        <releases><enabled>true</enabled></releases>
+	    </pluginRepository>
+	</pluginRepositories>
+
+	<repositories>
+	    <repository>
+	        <id>yelbota-dropbox-repo</id>
+	        <url>http://dl.dropbox.com/u/36020926/maven/</url>
+	        <snapshots><enabled>false</enabled></snapshots>
+	        <releases><enabled>true</enabled></releases>
+	    </repository>
+	    <repository>
+	        <id>oss</id>
+	        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+	        <snapshots><enabled>true</enabled></snapshots>
+	        <releases><enabled>true</enabled></releases>
+	    </repository>
+	</repositories>
+
+</project>
