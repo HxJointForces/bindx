@@ -27,6 +27,10 @@ class SimpleValue implements IBindable
 
 	public function new() {
 	}
+
+	@bindable public function toString() : String {
+		return Std.string(def);
+	}
 }
 
 @bindable class ClassLevelValue implements IBindable
