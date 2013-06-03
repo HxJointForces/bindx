@@ -1,5 +1,7 @@
 package ;
 
+import main.TestClassLevel;
+import main.TestSimple;
 class TestRunner extends haxe.unit.TestRunner
 {
 	public static function main()

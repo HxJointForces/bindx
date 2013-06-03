@@ -1,4 +1,4 @@
-package ;
+package main;
 
 import AbstractBindxTest.SimpleValue;
 import haxe.unit.TestCase;
@@ -6,11 +6,11 @@ import bindx.IBindable;
 
 using bindx.Bind;
 
-class TestClassLevel extends AbstractBindxTest
+class TestSimple extends AbstractBindxTest
 {
 
 	public function testSimpleBind() {
-		var v = createClassLevelValue();
+		var v = createSimpleValue();
 
 		var oldDef = v.def;
 		var newDef = 42;
@@ -29,7 +29,7 @@ class TestClassLevel extends AbstractBindxTest
 	}
 
 	public function testMultiDispatch() {
-		var v = createClassLevelValue();
+		var v = createSimpleValue();
 
 		var times = 5;
 		var bindingDispatched = 0;
@@ -43,7 +43,7 @@ class TestClassLevel extends AbstractBindxTest
 	}
 
 	public function testSimpleUnbind() {
-		var v = createClassLevelValue();
+		var v = createSimpleValue();
 
 		var bindingDispatched = 0;
 
