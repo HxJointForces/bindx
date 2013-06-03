@@ -1,24 +1,22 @@
 package wrong;
 import AbstractBindxTest.SimpleValue;
 import haxe.unit.TestCase;
-import bindx.Bind;
 
-using Bind;
+using bindx.Bind;
 
 class WrongTests extends AbstractBindxTest 
 {
+var a:String;
 	public function testLocalVariable() {
-		var def;
+		var def = 14;
 
 		def.bindx(function(_, _) {});
-
-		def = 14;
 	}
 
 	public function testLocalVariable2() {
 		var def;
 
-		def.bindx(function(_, _) {});
+		//def.bindx(function(_, _) {});
 	}
 
 }

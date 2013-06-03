@@ -4,3 +4,5 @@
 -main TestRunner
 #--times
 #-D macro-times
+
+-D dump=pretty
