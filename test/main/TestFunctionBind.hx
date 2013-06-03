@@ -44,7 +44,8 @@ class TestFunctionBind extends AbstractBindxTest
 	}
 
 	public function testUnbind() {
-		var v = createFunctionValue();
+		var obj = {};
+		var v = createFunctionValue(obj);
 
 		var bindingDispatched = 0;
 
