@@ -18,7 +18,7 @@ class FieldsBindSignal extends BindSignal<FieldListener<Dynamic>, GlobalFieldLis
 		super();
 	}
 
-	public function dispatch(type:String, oldValue:Dynamic, newValue:Dynamic) {
+	public function dispatch(type:String, oldValue:Dynamic, newValue:Dynamic):Void {
 		if (globalListeners.length > 0) {
 			needCopyGlobal ++;
 			for (g in globalListeners) g(type, oldValue, newValue);
@@ -40,7 +40,7 @@ class MethodsBindSignal extends BindSignal<MethodListener<Dynamic>, GlobalMethod
 		super();
 	}
 
-	public function dispatch(type:String, newValue:Dynamic) {
+	public function dispatch(type:String, newValue:Dynamic):Void {
 		if (globalListeners.length > 0) {
 			needCopyGlobal ++;
 			for (g in globalListeners) g(type, newValue);
@@ -63,14 +63,14 @@ class BindSignal<ListenerType, GlobalListenerType> {
 		clear();
 	}
 	
-	public function clear() {
+	public function clear():Void {
 		listeners = new Map();
 		needCopy = new Map();
 		globalListeners = [];
 		needCopyGlobal = 0;
 	}
 	
-	public function destroy() {
+	public function destroy():Void {
 		listeners = null;
 		needCopy = null;
 		globalListeners = null;
@@ -82,7 +82,7 @@ class BindSignal<ListenerType, GlobalListenerType> {
 	var listeners:Map < String, Array < ListenerType >> ;
 	var needCopy:Map<String, Int>;
 	
-	public function addGlobal(listener:GlobalListenerType) {
+	public function addGlobal(listener:GlobalListenerType):Void {
 		if (needCopyGlobal > 0) {
 			globalListeners = globalListeners.copy();
 			needCopyGlobal --;
@@ -92,16 +92,16 @@ class BindSignal<ListenerType, GlobalListenerType> {
 		globalListeners.push(listener);
 	}
 	
-	public function removeGlobal(listener:GlobalListenerType) {
+	public function removeGlobal(listener:GlobalListenerType):Bool {
 		if (needCopyGlobal > 0) {
 			globalListeners = globalListeners.copy();
 			needCopyGlobal --;
 		}
 		
-		globalListeners.remove(listener);
+		return globalListeners.remove(listener);
 	}
 	
-	public function add(type:String, listener:ListenerType) {
+	public function add(type:String, listener:ListenerType):Void {
 		var ls;
 		if (!listeners.exists(type)) {
 			needCopy[type] = 0;
@@ -115,18 +115,20 @@ class BindSignal<ListenerType, GlobalListenerType> {
 		ls.push(listener);
 	}
 	
-	public function remove(type:String, listener:ListenerType) {
-		if (!listeners.exists(type)) return;
+	public function remove(type:String, listener:ListenerType):Bool {
+		if (!listeners.exists(type)) return false;
 		var ls;
 		if (needCopy[type] > 0) {
 			needCopy[type] = needCopy[type] - 1;
 			listeners[type] = ls = listeners[type].copy();
 		} else ls = listeners[type];
 		
-		ls.remove(listener);
-		if (ls.length == 0) {
+		var res = ls.remove(listener);
+		if (res && ls.length == 0) {
 			listeners.remove(type);
 			needCopy.remove(type);
 		}
+
+		return res;
 	}
 }

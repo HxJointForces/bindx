@@ -1,7 +1,7 @@
 package ;
 
 import main.TestSubClass;
-import wrong.WrongTests;
+import main.WrongTests;
 import main.WrongTest1;
 import main.TestFunctionBind;
 import main.TestClassLevel;

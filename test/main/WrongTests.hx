@@ -1,4 +1,4 @@
-package wrong;
+package main;
 import AbstractBindxTest.SimpleValue;
 import haxe.unit.TestCase;
 

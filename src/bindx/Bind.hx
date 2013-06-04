@@ -65,9 +65,7 @@ class Bind {
 	inline static function fieldBinding(field:Expr, listener:ExprOf < Dynamic -> Dynamic -> Void > , bind:Bool) {
 		
 		var res = checkField(field);
-		
 		checkFunction(listener, res.classField, bind);
-		
 		return res;
 	}
 	
@@ -111,21 +109,23 @@ class Bind {
 	
 	inline static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, classField:ClassField, bind:Bool) {
 
-			var argsNum = switch (classField.kind) {
-			case FMethod(_): 1;
-			case FVar(_, _): 2;
+		var argsNum;
+		var reassign;
+		switch (classField.kind) {
+			case FMethod(k):
+				argsNum = 1;
+				switch (classField.type) {
+					case TFun(_, ret): reassign = ret;
+					case _: reassign = classField.type;
+				}
+			case _:
+				argsNum = 2;
+				reassign = classField.type;
 		}
-		var reassign = switch (classField.kind) {
-						case FMethod(k): 
-							switch (classField.type) {
-								case TFun(_, ret): ret;
-								case _: classField.type;
-							}
-						case _: classField.type;
-					}
 		
 		var ok = false;
 		switch (listener.expr) {
+
 			case EFunction(_, f): // inline function
 				if (f.args.length != argsNum)
 					Context.error('listener must have $argsNum arguments', listener.pos);
@@ -155,7 +155,7 @@ class Bind {
 							Context.error('listener argument type mismatch ${reassign.toString()} vs ${args[i].t.toString()}', listener.pos);
 					
 				case _:
-					Context.error('listener must be function', listener.pos);
+					Context.error('listener must be a function', listener.pos);
 			}
 		}
 	}
