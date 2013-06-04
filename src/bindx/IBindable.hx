@@ -1,7 +1,6 @@
 package bindx;
 
 /**
- * ...
  * @author deep <system.grand@gmail.com>
  */
 

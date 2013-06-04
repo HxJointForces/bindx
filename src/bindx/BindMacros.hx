@@ -8,7 +8,6 @@ using haxe.macro.Tools;
 using Lambda;
 
 /**
- * ...
  * @author deep <system.grand@gmail.com>
  */
 class BindMacros

@@ -1,8 +1,6 @@
 package main;
 
 import AbstractBindxTest.SimpleValue;
-import haxe.unit.TestCase;
-import bindx.IBindable;
 
 using bindx.Bind;
 
