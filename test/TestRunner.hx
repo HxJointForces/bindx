@@ -1,5 +1,6 @@
 package ;
 
+import main.TestBasicBind;
 import main.TestSubClass;
 import main.WrongTests;
 import main.WrongTest1;
@@ -18,6 +19,7 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new WrongTest1());
 		runner.add(new WrongTests());
 		runner.add(new TestSubClass());
+		runner.add(new TestBasicBind());
 		runner.run();
 	}
 }

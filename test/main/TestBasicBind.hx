@@ -1,5 +1,6 @@
-package ;
+package main;
 
+import haxe.unit.TestCase;
 import bindx.IBindable;
 
 using bindx.Bind;
@@ -9,38 +10,43 @@ using bindx.Bind;
  * @author deep <system.grand@gmail.com>
  */
 
-class TestBind
+class TestBasicBind extends TestCase
 {
-	var a:Int;
-	static var b:Int;
 	
-	static function main() {
+	function testValue() {
 		
 		var v = new Value();
-		
+
+		var globalCall = 0;
+		var toStringCall = 0;
+		var aCall = 0;
+		var lastS = null;
+
 		v.bindxGlobal(function (varName:String, old:Dynamic, val:Dynamic) {
-			trace('changed $varName : $old -> $val'); 
+			globalCall ++;
 		});
 		
-		var methodListener = function (_, newValue:String) { trace("listener " + newValue); };
-		v.toString.bindx(function (_, newValue) { trace(newValue); } );
+		var methodListener = function (newValue:String) { toStringCall ++; };
+		v.toString.bindx(function (newValue) { toStringCall ++; } );
 		v.toString.bindx(methodListener);
 		
 		v.def = 12;
 		v.def = 14;
 		
-		v.s.bindx(function (f, t) { $type(f); $type(t); } );
+		v.s.bindx(function (f, t) { lastS = t; } );
 		v.s = "23";
 		v.s = null;
 		
-		var listener = function (old:Float, val:MyInt) { trace('a updated from $old to $val'); } 
+		var listener = function (old:Float, val:MyInt) { aCall ++; }
 		v.a.bindx(listener);
-		
 		v.a = 4;
-		
 		v.a.unbindx(listener);
-		
 		v.a = 5;
+
+		assertEquals(aCall, 1);
+		assertEquals(toStringCall, 2 * 2);
+		assertEquals(lastS, "");
+		assertEquals(Type.getClass(lastS), String);
 	}
 	
 }

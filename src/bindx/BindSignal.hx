@@ -56,7 +56,6 @@ class MethodsBindSignal extends BindSignal<MethodListener<Dynamic>, GlobalMethod
 	}
 }
 
-
 class BindSignal<ListenerType, GlobalListenerType> {
 
 	function new() {
