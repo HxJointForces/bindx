@@ -96,4 +96,8 @@ class C implements IBindable {
 	public function new() {
 		
 	}
+	
+	public function toString() {
+		return '{C d:$d}';
+	}
 }

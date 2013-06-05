@@ -18,6 +18,7 @@ typedef FieldCall = {
 	var f:String;
 	var eType:ClassField;
 	var type:Type;
+	var bindable:Bool;
 }
 
 class Bind {
@@ -49,28 +50,41 @@ class Bind {
 			var fieldName = f.f;
 			var type = f.type.toComplexType();
 			
-			unbinds.push(macro
-					if ($listenerTargetExpr != null)
-						$listenerTargetExpr.__fieldBindings__.remove($v { fieldName }, $nextListenerNameExpr)
-			);
-			unbinds.push(macro $listenerTargetExpr = null );
-
-			res.push(macro var $listenerTarget:$type = null);
+			if (f.bindable) {
+				
+				unbinds.push(macro
+						if ($listenerTargetExpr != null)
+							$listenerTargetExpr.__fieldBindings__.remove($v { fieldName }, $nextListenerNameExpr)
+				);
+				
+				res.push(macro var $listenerTarget:$type = null);
+				unbinds.push(macro $listenerTargetExpr = null );
+				
+				listeners.unshift(macro
+					var $listenerName = function (o:$type, n:$type) {
+						if (o != null) {
+							o.$FIELD_BINDINGS_NAME.remove($v{fieldName}, $nextListenerNameExpr);
+							$listenerTargetExpr = null;
+						}
+						if (n != null) {
+							n.$FIELD_BINDINGS_NAME.add($v{fieldName}, $nextListenerNameExpr);
+							$listenerTargetExpr = n;
+							
+							$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+						}
+					}
+				);
+			} else {
+				
+				listeners.unshift(macro
+					var $listenerName = function (o:$type, n:$type) {
+						if (n != null) {
+							$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+						}
+					}
+				);
+			}
 			
-			listeners.unshift(macro
-				var $listenerName = function (o:$type, n:$type) {
-					if (o != null) {
-						o.$FIELD_BINDINGS_NAME.remove($v{fieldName}, $nextListenerNameExpr);
-						$listenerTargetExpr = null;
-					}
-					if (n != null) {
-						n.$FIELD_BINDINGS_NAME.add($v{fieldName}, $nextListenerNameExpr);
-						$listenerTargetExpr = n;
-						
-						$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
-					}
-				}
-			);
 			i++;
 		}
 		
@@ -83,14 +97,14 @@ class Bind {
 		if (fields.length == 0) {
 			res.push(getBindMacro(first, macro listener0 ));
 			res.push(macro listener0(null, $ { first.e } .$t));
-			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { first.f }, listener0 ));
-			unbinds.push(macro listener0 = null);
+			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { t }, listener0 ));
 		} else {
 			res.push(getBindMacro(first, macro $i { listenerName } ));
 			res.push(macro $i { listenerName } (null, $ { first.e } .$t));
-			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { first.f }, $i { listenerName } ));
+			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { t }, $i { listenerName } ));
 			unbinds.push(macro $i{listenerName} = null);
 		}
+		unbinds.push(macro listener0 = null);
 		
 		res.push(macro
 			return function () {
@@ -98,11 +112,11 @@ class Bind {
 			}
 		);
 		
-		var result = macro function () {
+		var result = macro function (_) {
 			$b { res };
-		}();
+		}(null);
 		
-		//trace(result.toString());
+		trace(result.toString());
 		
 		return result;
 	}
@@ -125,6 +139,7 @@ class Bind {
 				
 				var type = Context.typeof(e);
 				var classField:ClassField = null;
+				var bindable = true;
 				
 				switch (type) {
 					
@@ -134,8 +149,10 @@ class Bind {
 						if (!BindMacros.isIBindable(classType)) {
 							if (depth == 0)
 								Context.error("can't bind expr", e.pos);
-							else
+							else {
 								Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
+								bindable = false;
+							}
 						}
 
 						while (classType != null) {
@@ -143,6 +160,7 @@ class Bind {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
 										Context.warning('field "${e.toString()}.$f" is not bindable', expr.pos);
+										bindable = false;
 									}
 									classField = cf;
 									break;
@@ -153,6 +171,7 @@ class Bind {
 						}
 					
 					case _:
+						bindable = false;
 						if (depth == 0)
 							Context.error('can\'t bind expr "${expr.toString()}"', e.pos);
 						else
@@ -161,7 +180,7 @@ class Bind {
 				
 				checkField2(e, fields, depth + 1);
 				
-				fields.push( { e:e, f:f, eType:classField, type:type } );
+				fields.push( { e:e, f:f, eType:classField, type:type, bindable:bindable } );
 				
 			case EConst(CIdent(_)): 
 				if (depth == 0)
