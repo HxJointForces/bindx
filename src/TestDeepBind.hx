@@ -60,6 +60,7 @@ class A implements IBindable {
 	@bindable public var b2:B2;
 	
 	public function test(i:Int):B {
+		Bind.notify(b.c.toString);
 		return b;
 	}
 
@@ -97,7 +98,7 @@ class C implements IBindable {
 		
 	}
 	
-	public function toString() {
+	@bindable public function toString():String {
 		return '{C d:$d}';
 	}
 }
