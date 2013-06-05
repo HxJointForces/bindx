@@ -6,5 +6,5 @@
 --times
 -D macro-times
 
-#-D dump=pretty
+-D dump=pretty
 #--no-inline
