@@ -31,6 +31,7 @@ class Bind {
 		checkFunction(listener, fields[fields.length - 1].eType, true);
 
 		var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
+		var LISTENER_PREFIX = "listener";
 		
 		var first = fields.shift();
 		
@@ -38,7 +39,7 @@ class Bind {
 		var listeners = [];
 		var unbinds = [];
 		
-		var listener0Name = "listener0";
+		var listener0Name = LISTENER_PREFIX + "0";
 		var listener0NameExpr = macro $i { listener0Name };
 		
 		res.push(macro var $listener0Name = $listener);
@@ -49,8 +50,8 @@ class Bind {
 		while (i < fields.length) {
 			
 			var f = fields[i++];
-			listenerName = "listener" + i;
-			var nextListenerName = i == fields.length ? listener0Name : "listener" + (i + 1);
+			listenerName = LISTENER_PREFIX + i;
+			var nextListenerName = i == fields.length ? listener0Name : LISTENER_PREFIX + (i + 1);
 			var nextListenerNameExpr = macro $i { nextListenerName };
 			var listenerTarget = nextListenerName + "target";
 			var listenerTargetExpr = macro $i { listenerTarget };
@@ -106,7 +107,7 @@ class Bind {
 		} else {
 			
 			i = 1;
-			listenerName = "listener" + i;
+			listenerName = LISTENER_PREFIX + i;
 			var listenerNameExpr = macro $i { listenerName };
 		
 			res.push(getBindMacro(true, first.e, t, listenerNameExpr, first.eType ));
