@@ -21,13 +21,18 @@ class TestDeepBind extends TestCase
 	function testMethodBind() {
 		var a = new A();
 		a.b = new B();
+		a.b.c = new C();
+		var num = 0;
 		
-		//a.b.toString.bindx(function(n) trace(n));
+		var t = a.b;
+		a.b.getC().toString.bindx(function() num++);
 
-		assertTrue(true);
+		Bind.notify(a.b.c.toString);
+		a.b.c.d = "23";
+		assertEquals(num, 3); // 2 + 1 auto;
 	}
 	
-	/*function testDeepBind() {
+	function testDeepBind() {
 		var info = "";
 		
 		var a = new A();
@@ -59,7 +64,7 @@ class TestDeepBind extends TestCase
 		a.b.c.d = "6";
 		
 		assertEquals(info, "012345");
-	}*/
+	}
 }
 
 class A implements IBindable {
@@ -69,7 +74,7 @@ class A implements IBindable {
 	@bindable public var b2:B2;
 	
 	public function test(i:Int):B {
-		Bind.notify(b.c.toString);
+		//Bind.notify(b.c.toString);
 		return b;
 	}
 
@@ -92,12 +97,16 @@ class B implements IBindable {
 	function set_c(v) {
 		c = v;
 		var i = 12;
-		Bind.notify(this.toString);
+		//Bind.notify(this.toString);
 		return v;
 	}
 	
-	@bindable public function toString(a:Int):String {
-		return a + c.toString();
+	@bindable public function getC():C {
+		return c;
+	}
+	
+	@bindable public function toString():String {
+		return c.toString();
 	}
 	
 	public var c2:B2;
@@ -108,10 +117,17 @@ class B implements IBindable {
 }
 class C implements IBindable {
 	
-	@bindable public var d:String;
+	@bindable public var d(default, set):String;
 	
 	public function new() {
 		
+	}
+	
+	function set_d(v) {
+		if (d == v) return v;
+		d = v;
+		toString.notify();
+		return v;
 	}
 	
 	@bindable public function toString():String {

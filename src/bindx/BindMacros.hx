@@ -209,9 +209,11 @@ class BindMacros
 				expr: macro {
 					var $OLD_VALUE_NAME = $i { name };
 					if ($old == $val) return $val;
-					$i { name } = $val;
-					$i{ FIELD_BINDINGS_NAME }.dispatch($v { name }, $old, $i { name } );
-					return $val;
+					else {
+						$i { name } = $val;
+						$i{ FIELD_BINDINGS_NAME }.dispatch($v { name }, $old, $i { name } );
+						return $val;
+					}
 				}
 			})
 		}
