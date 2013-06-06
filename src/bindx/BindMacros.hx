@@ -156,13 +156,13 @@ class BindMacros
 					name:FIELD_BINDINGS_NAME,
 					pos:Context.currentPos(),
 					access: [APublic],
-					kind:FVar(macro : bindx.BindSignal.FieldsBindSignal)
+					kind:FProp("default", "null", macro : bindx.BindSignal.FieldsBindSignal)
 				});
 				res.push( {
 					name:METHOD_BINDINGS_NAME,
 					pos:Context.currentPos(),
 					access: [APublic],
-					kind:FVar(macro : bindx.BindSignal.MethodsBindSignal)
+					kind:FProp("default", "null", macro : bindx.BindSignal.MethodsBindSignal)
 				});
 			}
 

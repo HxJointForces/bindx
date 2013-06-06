@@ -44,91 +44,79 @@ class Bind {
 		
 		res.push(macro var $listener0Name = $listener);
 		
-		var listenerName;
-		
-		var i = 0;
-		while (i < fields.length) {
-			
-			var f = fields[i++];
-			listenerName = LISTENER_PREFIX + i;
-			var nextListenerName = i == fields.length ? listener0Name : LISTENER_PREFIX + (i + 1);
-			var nextListenerNameExpr = macro $i { nextListenerName };
-			var listenerTarget = nextListenerName + "target";
-			var listenerTargetExpr = macro $i { listenerTarget };
-			var fieldName = f.f;
-			var type = f.type.toComplexType();
-			
-			if (f.bindable) {
-				
-				unbinds.push(macro
-						if ($listenerTargetExpr != null)
-							$listenerTargetExpr.__fieldBindings__.remove($v { fieldName }, $nextListenerNameExpr)
-				);
-				
-				res.push(macro var $listenerTarget:$type = null);
-				unbinds.push(macro $listenerTargetExpr = null );
-				
-				listeners.unshift(macro
-					var $listenerName = function (o:$type, n:$type) {
-						if (o == null) o = $listenerTargetExpr;
-						if (o != null) {
-							${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.eType)}
-						}
-						if (n != null) {
-							${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.eType)}
-							$listenerTargetExpr = n;
-							
-							$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
-						} else {
-							$listenerTargetExpr = null;
-						}
-					}
-				);
-			} else {
-				
-				listeners.unshift(macro
-					var $listenerName = function (o:$type, n:$type) {
-						if (n != null) {
-							$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
-						}
-					}
-				);
-			}
-		}
-		
-		res = res.concat(listeners);
-		
-		var t = first.f;
+		var firstFieldName = first.f;
 		if (fields.length == 0) {
 
-			res.push(getBindMacro(true, first.e, t, listener0NameExpr, first.eType));
-			res.push(macro $listener0NameExpr(null, $ { first.e } .$t));
-			unbinds.push(getBindMacro(false, first.e, t, listener0NameExpr, first.eType));
+			res.push(getBindMacro(true, first.e, firstFieldName, listener0NameExpr, first.eType));
+			res.push(macro $listener0NameExpr(null, $ { first.e } .$firstFieldName));
+			unbinds.push(getBindMacro(false, first.e, firstFieldName, listener0NameExpr, first.eType));
+		
 		} else {
+			
+			var listenerName;
+			var i = 0;
+			while (i < fields.length) {
+				
+				var f = fields[i++];
+				listenerName = LISTENER_PREFIX + i;
+				var nextListenerName = i == fields.length ? listener0Name : LISTENER_PREFIX + (i + 1);
+				var nextListenerNameExpr = macro $i { nextListenerName };
+				var listenerTarget = nextListenerName + "target";
+				var listenerTargetExpr = macro $i { listenerTarget };
+				var fieldName = f.f;
+				var type = f.type.toComplexType();
+				
+				if (f.bindable) {
+					
+					unbinds.push(macro
+							if ($listenerTargetExpr != null)
+								$listenerTargetExpr.__fieldBindings__.remove($v { fieldName }, $nextListenerNameExpr)
+					);
+					
+					res.push(macro var $listenerTarget:$type = null);
+					unbinds.push(macro $listenerTargetExpr = null );
+					
+					listeners.unshift(macro
+						var $listenerName = function (o:$type, n:$type) {
+							if (o == null) o = $listenerTargetExpr;
+							if (o != null) {
+								${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.eType)}
+							}
+							$listenerTargetExpr = n;
+							if (n != null) {
+								${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.eType)}
+								$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+							} 
+						}
+					);
+				} else {
+					
+					listeners.unshift(macro
+						var $listenerName = function (o:$type, n:$type) {
+							if (n != null) {
+								$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+							}
+						}
+					);
+				}
+			}
+			res = res.concat(listeners);
 			
 			i = 1;
 			listenerName = LISTENER_PREFIX + i;
 			var listenerNameExpr = macro $i { listenerName };
 		
-			res.push(getBindMacro(true, first.e, t, listenerNameExpr, first.eType ));
-			res.push(macro $listenerNameExpr(null, $ { first.e } .$t));
-			unbinds.push(getBindMacro(false, first.e, t, listenerNameExpr, first.eType));
+			res.push(getBindMacro(true, first.e, firstFieldName, listenerNameExpr, first.eType ));
+			res.push(macro $listenerNameExpr(null, $ { first.e } .$firstFieldName));
+			unbinds.push(getBindMacro(false, first.e, firstFieldName, listenerNameExpr, first.eType));
 			unbinds.push(macro $listenerNameExpr = null);
 		}
 		unbinds.push(macro $listener0NameExpr = null);
 		
-		res.push(macro
-			return function () {
-				$b{unbinds}
-			}
-		);
+		res.push(macro return function () $b{unbinds});
 		
-		var result = macro function (_) {
-			$b { res };
-		}(this);
-		
+		var result = macro (function (_) $b { res })(this);
 		trace(result.toString());
-		
 		return result;
 	}
 	
@@ -143,7 +131,6 @@ class Bind {
 	macro static public function notify(field:Expr) {
 		var fields = [];
 		checkField(field, fields, 0);
-		//trace(fields.length);
 		
 		var f = fields[fields.length - 1];
 		
