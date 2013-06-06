@@ -131,8 +131,41 @@ class Bind {
 		
 		return result;
 	}
-	#if macro
 	
+	inline static public function bindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
+		bindable.__fieldBindings__.addGlobal(listener);
+	}
+	
+	inline static public function unbindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
+		bindable.__fieldBindings__.removeGlobal(listener);
+	}
+	
+	macro static public function notify(field:Expr) {
+		var fields = [];
+		checkField(field, fields, 0);
+		//trace(fields.length);
+		
+		var f = fields[fields.length - 1];
+		
+		return switch (f.eType.kind) {
+			case FMethod(_):
+				
+				if (!f.bindable)
+					Context.error("can't notify non bindable method", f.e.pos);
+			
+				switch (f.eType.type) {
+					case TFun(_, ret):
+						if (ret.toString() == "Void")
+							Context.error("can't notify Void return function", field.pos);
+					case _:
+				}
+				macro $ { f.e } .__methodBindings__.dispatch($v { f.f }, $ { field } ());
+			case FVar(_, _):
+				Context.error("notify works only with methods", field.pos);
+		}
+	}
+	
+	#if macro
 	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, eType:ClassField) {
 		var m = bind ? "add" : "remove";
 		return switch (eType.kind) {
@@ -205,42 +238,7 @@ class Bind {
 				return null;
 		}
 	}
-	#end
 	
-	inline static public function bindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
-		bindable.__fieldBindings__.addGlobal(listener);
-	}
-	
-	inline static public function unbindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
-		bindable.__fieldBindings__.removeGlobal(listener);
-	}
-	
-	macro static public function notify(field:Expr) {
-		var fields = [];
-		checkField(field, fields, 0);
-		//trace(fields.length);
-		
-		var f = fields[fields.length - 1];
-		
-		return switch (f.eType.kind) {
-			case FMethod(_):
-				
-				if (!f.bindable)
-					Context.error("can't notify non bindable method", f.e.pos);
-			
-				switch (f.eType.type) {
-					case TFun(_, ret):
-						if (ret.toString() == "Void")
-							Context.error("can't notify Void return function", field.pos);
-					case _:
-				}
-				macro $ { f.e } .__methodBindings__.dispatch($v { f.f }, $ { field } ());
-			case FVar(_, _):
-				Context.error("notify works only with methods", field.pos);
-		}
-	}
-	
-	#if macro
 	inline static private function checkFunction(listener:Expr, classField:ClassField, bind:Bool) {
 
 		var argsNum;
