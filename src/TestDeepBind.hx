@@ -18,7 +18,16 @@ class TestDeepBind extends TestCase
 		r.run();
 	}
 	
-	function testDeepBind() {
+	function testMethodBind() {
+		var a = new A();
+		a.b = new B();
+		
+		//a.b.toString.bindx(function(n) trace(n));
+
+		assertTrue(true);
+	}
+	
+	/*function testDeepBind() {
 		var info = "";
 		
 		var a = new A();
@@ -50,7 +59,7 @@ class TestDeepBind extends TestCase
 		a.b.c.d = "6";
 		
 		assertEquals(info, "012345");
-	}
+	}*/
 }
 
 class A implements IBindable {
@@ -60,7 +69,7 @@ class A implements IBindable {
 	@bindable public var b2:B2;
 	
 	public function test(i:Int):B {
-		Bind.notify(b.c.toString);
+		Bind.notify(b.c.toString());
 		return b;
 	}
 
@@ -78,10 +87,17 @@ class B2 {
 
 class B implements IBindable {
 
-	@bindable public var c:C;
+	@bindable public var c(default, set):C;
 	
-	@bindable public function toString():String {
-		return "";
+	function set_c(v) {
+		c = v;
+		var i = 12;
+		//Bind.notify(this.toString(145));
+		return v;
+	}
+	
+	@bindable public function toString(a:Int):String {
+		return a + c.toString();
 	}
 	
 	public var c2:B2;

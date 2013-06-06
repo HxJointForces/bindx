@@ -201,7 +201,7 @@ class BindMacros
 		return {
 			name: "set_" + name,
 			pos: pos,
-			access: [APrivate],
+			access: [APrivate, AInline],
 			kind:FFun( {
 				ret:type,
 				params:[],

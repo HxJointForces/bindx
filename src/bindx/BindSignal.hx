@@ -7,9 +7,9 @@ package bindx;
 typedef FieldListener<T> = T->T->Void;
 typedef GlobalFieldListener<T> = String->T->T->Void;
 
-typedef MethodListener<T> = T->Void;
+typedef MethodListener<T> = Void->Void;
 
-typedef GlobalMethodListener<T> = String->T->Void;
+typedef GlobalMethodListener<T> = String->Void;
 
 class FieldsBindSignal extends BindSignal<FieldListener<Dynamic>, GlobalFieldListener<Dynamic>> {
 
@@ -39,10 +39,10 @@ class MethodsBindSignal extends BindSignal<MethodListener<Dynamic>, GlobalMethod
 		super();
 	}
 
-	public function dispatch(type:String, newValue:Dynamic):Void {
+	public function dispatch(type:String):Void {
 		if (globalListeners.length > 0) {
 			needCopyGlobal ++;
-			for (g in globalListeners) g(type, newValue);
+			for (g in globalListeners) g(type);
 			if (needCopyGlobal > 0) needCopyGlobal --;
 		}
 
@@ -50,7 +50,7 @@ class MethodsBindSignal extends BindSignal<MethodListener<Dynamic>, GlobalMethod
 
 		var ls = listeners[type];
 		needCopy[type] = needCopy[type] + 1;
-		for (l in ls) l(newValue);
+		for (l in ls) l();
 		if (needCopy[type] > 0) needCopy[type] = needCopy[type] - 1;
 	}
 }

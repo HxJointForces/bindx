@@ -16,9 +16,10 @@ using Lambda;
 typedef FieldCall = {
 	var e:Expr;
 	var f:String;
-	var eType:ClassField;
+	var classField:ClassField;
 	var type:Type;
 	var bindable:Bool;
+	var method:{args:Array<{e:Expr, fields:Array<FieldCall>}>};
 }
 
 class Bind {
@@ -33,8 +34,12 @@ class Bind {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields);
-		checkFunction(listener, fields[fields.length - 1].eType, true);
+		checkFunction(listener, fields[fields.length - 1], true);
 
+		/*for (f in fields) {
+			trace(f);
+			trace("");
+		}*/
 		var first = fields.shift();
 		
 		var res = [];
@@ -49,9 +54,9 @@ class Bind {
 		var firstFieldName = first.f;
 		if (fields.length == 0) {
 
-			res.push(getBindMacro(true, first.e, firstFieldName, listener0NameExpr, first.eType));
+			res.push(getBindMacro(true, first.e, firstFieldName, listener0NameExpr, first.classField));
 			res.push(macro $listener0NameExpr(null, $ { first.e } .$firstFieldName));
-			unbinds.push(getBindMacro(false, first.e, firstFieldName, listener0NameExpr, first.eType));
+			unbinds.push(getBindMacro(false, first.e, firstFieldName, listener0NameExpr, first.classField));
 			
 		} else {
 			
@@ -60,6 +65,8 @@ class Bind {
 			while (i < fields.length) {
 				
 				var f = fields[i++];
+				trace(f.method);
+				trace(f.type);
 				listenerName = LISTENER_PREFIX + i;
 				var nextListenerName = i == fields.length ? listener0Name : LISTENER_PREFIX + (i + 1);
 				var nextListenerNameExpr = macro $i { nextListenerName };
@@ -82,11 +89,11 @@ class Bind {
 						var $listenerName = function (o:$type, n:$type) {
 							if (o == null) o = $listenerTargetExpr;
 							if (o != null)
-								${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.eType)}
+								${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.classField)}
 
 							$listenerTargetExpr = n;
 							if (n != null) {
-								${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.eType)}
+								${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.classField)}
 								$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
 							} 
 						}
@@ -106,9 +113,9 @@ class Bind {
 			listenerName = LISTENER_PREFIX + i;
 			var listenerNameExpr = macro $i { listenerName };
 		
-			res.push(getBindMacro(true, first.e, firstFieldName, listenerNameExpr, first.eType ));
+			res.push(getBindMacro(true, first.e, firstFieldName, listenerNameExpr, first.classField ));
 			res.push(macro $listenerNameExpr(null, $ { first.e } .$firstFieldName));
-			unbinds.push(getBindMacro(false, first.e, firstFieldName, listenerNameExpr, first.eType));
+			unbinds.push(getBindMacro(false, first.e, firstFieldName, listenerNameExpr, first.classField));
 			unbinds.push(macro $listenerNameExpr = null);
 		}
 		unbinds.push(macro $listener0NameExpr = null);
@@ -129,33 +136,37 @@ class Bind {
 	}
 	
 	macro static public function notify(field:Expr) {
-		var fields = [];
+		var fields:Array<FieldCall> = [];
 		checkField(field, fields, 0);
 		
 		var f = fields[fields.length - 1];
-		
-		return switch (f.eType.kind) {
-			case FMethod(_):
-				
-				if (!f.bindable)
-					Context.error("can't notify non bindable method", f.e.pos);
+		if (f.method != null) {
 			
-				switch (f.eType.type) {
-					case TFun(_, ret):
-						if (ret.toString() == "Void")
-							Context.error("can't notify Void return function", field.pos);
-					case _:
-				}
-				macro $ { f.e } .__methodBindings__.dispatch($v { f.f }, $ { field } ());
-			case FVar(_, _):
-				Context.error("notify works only with methods", field.pos);
+			if (!f.bindable)
+				Context.error("can't notify non bindable method", f.e.pos);
+				
+			if (f.method.args.length > 0)
+				Context.error("can't notify method with args", field.pos);
+				
+			var fieldName = f.f;
+			switch (f.classField.type) {
+				case TFun(_, ret):
+					if (ret.toString() == "Void")
+						Context.error("can't notify Void return function", field.pos);
+				case _:
+			}
+			return macro $ { f.e } .__methodBindings__.dispatch($v { fieldName });  // $ { f.e }.$fieldName ($a{args})
+		} else {
+			
+			Context.error("notify works only with methods", field.pos);
+			return null;
 		}
 	}
 	
 	#if macro
-	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, eType:ClassField) {
+	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, classField:ClassField) {
 		var m = bind ? "add" : "remove";
-		return switch (eType.kind) {
+		return switch (classField.kind) {
 			case FVar(_,_):
 				macro ${field}.__fieldBindings__.$m($v { fieldName }, $listener);
 			case FMethod(_):
@@ -163,16 +174,32 @@ class Bind {
 		}
 	}
 	
-	static private function checkField(expr:Expr, fields:Array<Dynamic>, depth:Int = 0):Void {
+	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth:Int = 0, warnNonBindable = true):Void {
 		
 		switch (expr.expr) {
+			
+			case ECall(e, params):
+				var lfields = [];
+				checkField(e, lfields, depth);
+
+				var args = [];
+				for (p in params) {
+					var f = [];
+					checkField(p, f, 1, warnNonBindable);
+					args.push({e:p, fields:f});
+				}
+
+				var last = lfields[lfields.length - 1];
+				last.method = {args:args};
+				last.type = Context.typeof(e);
+				for (f in lfields) fields.push(f);
 			
 			case EField(e, f):
 				
 				var type = Context.typeof(e);
 				var classField:ClassField = null;
 				var bindable = true;
-				
+
 				switch (type) {
 					
 					case TInst(t, _): 
@@ -182,7 +209,7 @@ class Bind {
 							if (depth == 0)
 								Context.error("can't bind expr", e.pos);
 							else {
-								Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
+								if (warnNonBindable) Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
 								bindable = false;
 							}
 						}
@@ -191,7 +218,7 @@ class Bind {
 							for (cf in classType.fields.get()) {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
-										Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
+										if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 										bindable = false;
 									}
 									classField = cf;
@@ -206,41 +233,64 @@ class Bind {
 						bindable = false;
 						if (depth == 0)
 							Context.error('can\'t bind expr "${expr.toString()}"', e.pos);
-						else
+						else if (warnNonBindable)
 							Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
 				}
 				
-				checkField(e, fields, depth + 1);
+				checkField(e, fields, depth + 1, warnNonBindable);
+
+				var method = null;
+				switch (classField.kind) {
+					case FMethod(k): 
+						method = { args:[] };
+						type = switch(Context.typeof(expr)) {
+							case TFun(_, ret): ret;
+							case _: null;
+						}
+						
+					case FVar(_, _):
+				}
 				
-				fields.push( { e:e, f:f, eType:classField, type:type, bindable:bindable } );
+				fields.push( {
+					e:e,
+					f:f,
+					classField:classField,
+					type:type,
+					bindable:bindable,
+					method:method
+				} );
 				
 			case EConst(CIdent(_)): 
 				if (depth == 0)
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
 					
-			case _ : 
-				trace(depth);
-				trace(expr);
-				Context.error('"${expr.toString()}" must be field call', expr.pos);
+			case _ :
+				if (depth == 0) {
+					trace(depth);
+					trace(expr);
+					Context.error('"${expr.toString()}" must be field call', expr.pos);
+				}
 				return null;
 		}
 	}
 	
-	inline static private function checkFunction(listener:Expr, classField:ClassField, bind:Bool) {
+	inline static private function checkFunction(listener:Expr, field:FieldCall, bind:Bool) {
 
 		var argsNum;
 		var reassign;
-		switch (classField.kind) {
+		switch (field.classField.kind) {
 			case FMethod(k):
 				argsNum = 1;
-				reassign = switch (classField.type) {
+				reassign = switch (field.classField.type) {
 					case TFun(_, ret): ret;
-					case _: classField.type;
+					case _: field.classField.type;
 				}
 			case _:
 				argsNum = 2;
-				reassign = classField.type;
+				reassign = field.classField.type;
 		}
+		trace(reassign);
+		trace(field.type);
 		
 		var ok = false;
 		switch (listener.expr) {
