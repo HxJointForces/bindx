@@ -23,27 +23,34 @@ typedef FieldCall = {
 
 class Bind {
 
-	macro static public function bindx(expr:Expr, listener:Expr) {
+	macro static public function bindx(expr:Expr, listener:Expr):ExprOf<Void->Void> {
 		
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields);
 		checkFunction(listener, fields[fields.length - 1].eType, true);
 
+		var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
+		
 		var first = fields.shift();
 		
 		var res = [];
 		var listeners = [];
 		var unbinds = [];
-		var listenerName = "listener0";
-		res.push(macro var $listenerName = $listener);
-		var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
 		
-		var i = 1;
-		for (f in fields) {
+		var listener0Name = "listener0";
+		var listener0NameExpr = macro $i { listener0Name };
+		
+		res.push(macro var $listener0Name = $listener);
+		
+		var listenerName;
+		
+		var i = 0;
+		while (i < fields.length) {
 			
+			var f = fields[i++];
 			listenerName = "listener" + i;
-			var nextListenerName = i == fields.length ? "listener0" : "listener" + (i + 1);
+			var nextListenerName = i == fields.length ? listener0Name : "listener" + (i + 1);
 			var nextListenerNameExpr = macro $i { nextListenerName };
 			var listenerTarget = nextListenerName + "target";
 			var listenerTargetExpr = macro $i { listenerTarget };
@@ -62,16 +69,17 @@ class Bind {
 				
 				listeners.unshift(macro
 					var $listenerName = function (o:$type, n:$type) {
+						if (o == null) o = $listenerTargetExpr;
 						if (o != null) {
-							${getUnbindMacro(macro o, fieldName, nextListenerNameExpr, f.eType)}
-							$listenerTargetExpr = null;
+							${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.eType)}
 						}
 						if (n != null) {
-							${getBindMacro(macro n, fieldName, nextListenerNameExpr, f.eType)}
-							//n.$FIELD_BINDINGS_NAME.add($v{fieldName}, $nextListenerNameExpr);
+							${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.eType)}
 							$listenerTargetExpr = n;
 							
 							$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+						} else {
+							$listenerTargetExpr = null;
 						}
 					}
 				);
@@ -85,27 +93,28 @@ class Bind {
 					}
 				);
 			}
-			
-			i++;
 		}
 		
 		res = res.concat(listeners);
 		
-		i = 1;
-		listenerName = "listener" + i;
-		
 		var t = first.f;
 		if (fields.length == 0) {
-			res.push(getBindMacro(first.e, first.f, macro listener0, first.eType ));
-			res.push(macro listener0(null, $ { first.e } .$t));
-			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { t }, listener0 ));
+
+			res.push(getBindMacro(true, first.e, t, listener0NameExpr, first.eType));
+			res.push(macro $listener0NameExpr(null, $ { first.e } .$t));
+			unbinds.push(getBindMacro(false, first.e, t, listener0NameExpr, first.eType));
 		} else {
-			res.push(getBindMacro(first.e, first.f, macro $i { listenerName }, first.eType ));
-			res.push(macro $i { listenerName } (null, $ { first.e } .$t));
-			unbinds.push(macro $ { first.e } .__fieldBindings__.remove($v { t }, $i { listenerName } ));
-			unbinds.push(macro $i{listenerName} = null);
+			
+			i = 1;
+			listenerName = "listener" + i;
+			var listenerNameExpr = macro $i { listenerName };
+		
+			res.push(getBindMacro(true, first.e, t, listenerNameExpr, first.eType ));
+			res.push(macro $listenerNameExpr(null, $ { first.e } .$t));
+			unbinds.push(getBindMacro(false, first.e, t, listenerNameExpr, first.eType));
+			unbinds.push(macro $listenerNameExpr = null);
 		}
-		unbinds.push(macro listener0 = null);
+		unbinds.push(macro $listener0NameExpr = null);
 		
 		res.push(macro
 			return function () {
@@ -123,21 +132,13 @@ class Bind {
 	}
 	#if macro
 	
-	inline static private function getBindMacro(field:Expr, fieldName:String, listener:Expr, eType:ClassField) {
+	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, eType:ClassField) {
+		var m = bind ? "add" : "remove";
 		return switch (eType.kind) {
 			case FVar(_,_):
-				macro ${field}.__fieldBindings__.add($v { fieldName }, $listener);
+				macro ${field}.__fieldBindings__.$m($v { fieldName }, $listener);
 			case FMethod(_):
-				macro ${field}.__methodBindings__.add($v { fieldName }, $listener);
-		}
-	}
-	
-	inline static private function getUnbindMacro(field:Expr, fieldName:String, listener:Expr, eType:ClassField) {
-		return switch (eType.kind) {
-			case FVar(_,_):
-				macro ${field}.__fieldBindings__.remove($v { fieldName }, $listener);
-			case FMethod(_):
-				macro ${field}.__methodBindings__.remove($v { fieldName }, $listener);
+				macro ${field}.__methodBindings__.$m($v { fieldName }, $listener);
 		}
 	}
 	
@@ -169,7 +170,7 @@ class Bind {
 							for (cf in classType.fields.get()) {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
-										Context.warning('field "${e.toString()}.$f" is not bindable', expr.pos);
+										Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 										bindable = false;
 									}
 									classField = cf;
@@ -194,12 +195,12 @@ class Bind {
 				
 			case EConst(CIdent(_)): 
 				if (depth == 0)
-					Context.error('first parameter must be field call', expr.pos);
+					Context.error('"${expr.toString()}" must be field call', expr.pos);
 					
 			case _ : 
 				trace(depth);
 				trace(expr);
-				Context.error('first parameter must be field call', expr.pos);
+				Context.error('"${expr.toString()}" must be field call', expr.pos);
 				return null;
 		}
 	}
@@ -216,7 +217,7 @@ class Bind {
 	macro static public function notify(field:Expr) {
 		var fields = [];
 		checkField(field, fields, 0);
-		trace(fields.length);
+		//trace(fields.length);
 		
 		var f = fields[fields.length - 1];
 		
@@ -239,7 +240,7 @@ class Bind {
 	}
 	
 	#if macro
-	inline static private function checkFunction(listener:ExprOf<Dynamic -> Dynamic -> Void>, classField:ClassField, bind:Bool) {
+	inline static private function checkFunction(listener:Expr, classField:ClassField, bind:Bool) {
 
 		var argsNum;
 		var reassign;
