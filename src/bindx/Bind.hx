@@ -22,6 +22,11 @@ typedef FieldCall = {
 }
 
 class Bind {
+	
+	#if macro
+		inline static var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
+		inline static var LISTENER_PREFIX = "listener";
+	#end
 
 	macro static public function bindx(expr:Expr, listener:Expr):ExprOf<Void->Void> {
 		
@@ -30,9 +35,6 @@ class Bind {
 		checkField(expr, fields);
 		checkFunction(listener, fields[fields.length - 1].eType, true);
 
-		var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
-		var LISTENER_PREFIX = "listener";
-		
 		var first = fields.shift();
 		
 		var res = [];
@@ -50,7 +52,7 @@ class Bind {
 			res.push(getBindMacro(true, first.e, firstFieldName, listener0NameExpr, first.eType));
 			res.push(macro $listener0NameExpr(null, $ { first.e } .$firstFieldName));
 			unbinds.push(getBindMacro(false, first.e, firstFieldName, listener0NameExpr, first.eType));
-		
+			
 		} else {
 			
 			var listenerName;
@@ -79,9 +81,9 @@ class Bind {
 					listeners.unshift(macro
 						var $listenerName = function (o:$type, n:$type) {
 							if (o == null) o = $listenerTargetExpr;
-							if (o != null) {
+							if (o != null)
 								${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.eType)}
-							}
+
 							$listenerTargetExpr = n;
 							if (n != null) {
 								${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.eType)}
@@ -92,11 +94,9 @@ class Bind {
 				} else {
 					
 					listeners.unshift(macro
-						var $listenerName = function (o:$type, n:$type) {
-							if (n != null) {
-								$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
-							}
-						}
+						var $listenerName = function (o:$type, n:$type)
+							if (n != null)
+								$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName)
 					);
 				}
 			}
@@ -233,9 +233,9 @@ class Bind {
 		switch (classField.kind) {
 			case FMethod(k):
 				argsNum = 1;
-				switch (classField.type) {
-					case TFun(_, ret): reassign = ret;
-					case _: reassign = classField.type;
+				reassign = switch (classField.type) {
+					case TFun(_, ret): ret;
+					case _: classField.type;
 				}
 			case _:
 				argsNum = 2;
@@ -260,20 +260,18 @@ class Bind {
 				
 			case _:
 		}
-		if (!ok) {
-			switch (Context.typeof(listener)) {
+		if (!ok) switch (Context.typeof(listener)) {
 				
-				case TFun(args, ret):
-					if (args.length != argsNum)
-						Context.error('listener must have $argsNum arguments', listener.pos);
-					
-					for (i in 0...argsNum)
-						if (!Context.unify(reassign, args[i].t))
-							Context.error('listener argument type mismatch ${reassign.toString()} vs ${args[i].t.toString()}', listener.pos);
-					
-				case _:
-					Context.error('listener must be a function', listener.pos);
-			}
+			case TFun(args, ret):
+				if (args.length != argsNum)
+					Context.error('listener must have $argsNum arguments', listener.pos);
+				
+				for (i in 0...argsNum)
+					if (!Context.unify(reassign, args[i].t))
+						Context.error('listener argument type mismatch ${reassign.toString()} vs ${args[i].t.toString()}', listener.pos);
+				
+			case _:
+				Context.error('listener must be a function', listener.pos);
 		}
 	}
 	#end
