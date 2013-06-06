@@ -69,7 +69,7 @@ class A implements IBindable {
 	@bindable public var b2:B2;
 	
 	public function test(i:Int):B {
-		Bind.notify(b.c.toString());
+		Bind.notify(b.c.toString);
 		return b;
 	}
 
@@ -92,7 +92,7 @@ class B implements IBindable {
 	function set_c(v) {
 		c = v;
 		var i = 12;
-		//Bind.notify(this.toString(145));
+		Bind.notify(this.toString);
 		return v;
 	}
 	
