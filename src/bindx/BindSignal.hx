@@ -124,7 +124,7 @@ class BindSignal<ListenerType, GlobalListenerType> {
 		var res = ls.remove(listener);
 		if (res && ls.length == 0) {
 			listeners.remove(type);
-			needCopy.remove(type);
+			needCopy[type] = 0;
 		}
 
 		return res;

@@ -44,7 +44,7 @@ class BindMacros
 
 		if (classType.meta.get().exists(function (m) return m.name == BINDING_META_NAME)) {
 			var ignoreAccess = [APrivate, AStatic, ADynamic, AMacro];
-			// first step
+
 			for (f in res) {
 				if (f.name == "new") {
 					ctor = f;
@@ -58,9 +58,8 @@ class BindMacros
 					continue;
 				}
 				
-				if (f.access.exists(function (a) return ignoreAccess.has(a))) {
+				if (f.access.exists(function (a) return ignoreAccess.has(a)))
 					continue;
-				}
 				
 				switch (f.kind) {
 					case FProp(_, _, _, _), FVar(_, _):
@@ -82,7 +81,6 @@ class BindMacros
 					continue;
 				
 				checkField(f);
-				
 				toBind.push(f);
 			}
 		}
@@ -98,16 +96,14 @@ class BindMacros
 		for (f in toBind) {
 			
 			switch (f.kind) {
+				
 				case FFun(fun):
 					if (fun.ret == null)
 						Context.error("unknown return type", f.pos);
 					if (fun.ret.toString() == "Void")
 						Context.error("can't bind Void function", f.pos);
 					continue;
-				case _:
-			}
-				
-			switch (f.kind) {
+					
 				case FVar(ct, e):
 					f.kind = FProp("default", "set", ct, e);
 					add.push(genSetter(f.name, ct, f.pos));
@@ -146,7 +142,6 @@ class BindMacros
 							
 						case _: Context.warning("unknown setter accesssor: " + set, f.pos);
 					}
-				case _: // functions
 			}
 		}
 
@@ -186,7 +181,6 @@ class BindMacros
 		for (a in f.access) {
 			switch (a) {
 				case AStatic: Context.error("can't bind static fields", f.pos);
-				//case AInline: Context.error("can't bind inline fields", f.pos);
 				case AMacro: Context.error("can't bind macro fields", f.pos);
 				case ADynamic: Context.error("can't bind dynamic fields", f.pos);
 				case _:
@@ -244,7 +238,6 @@ class BindMacros
 	}
 
 	public static function isIBindable(classType:ClassType) {
-		if (classType == null) return false;
 		while (classType != null) {
 			if (classType.interfaces.exists(
 				function (i) return i.t.toString() == "bindx.IBindable")

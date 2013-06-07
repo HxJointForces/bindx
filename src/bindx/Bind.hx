@@ -189,7 +189,7 @@ class Bind {
 	
 	macro static public function notify(field:Expr) {
 		var fields:Array<FieldCall> = [];
-		checkField(field, fields, 0, false);
+		checkField(field, fields, 0, false, 0);
 		
 		var f = fields[fields.length - 1];
 		if (f.method != null) {
@@ -202,6 +202,7 @@ class Bind {
 				
 			if (f.type.toString() == "Void")
 				Context.error("can't notify Void return function", field.pos);
+				
 			return macro $ { f.e } .__methodBindings__.dispatch($v { f.f });  // $ { f.e }.$fieldName ($a{args})
 		} else {
 			
@@ -302,10 +303,10 @@ class Bind {
 				
 				checkField(e, fields, depth + 1, warnNonBindable, maxDepth);
 				
-			case EConst(CIdent(_)): 
+			/*case EConst(CIdent(_)): 
 				if (depth == 0)
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
-					
+			*/		
 			case _ :
 				//trace(depth);
 				//trace(expr);
