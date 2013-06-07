@@ -1,7 +1,6 @@
-package ;
+package main;
 
 import haxe.unit.TestCase;
-import haxe.unit.TestRunner;
 import bindx.IBindable;
 
 using bindx.Bind;
@@ -12,11 +11,6 @@ using bindx.Bind;
 
 class TestDeepBind extends TestCase
 {
-	static function main() {
-		var r = new TestRunner();
-		r.add(new TestDeepBind());
-		r.run();
-	}
 	
 	function testMethodBind() {
 		var a = new A();

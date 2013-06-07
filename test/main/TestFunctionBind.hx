@@ -18,12 +18,12 @@ class TestFunctionBind extends AbstractBindxTest
 		var times = 5;
 		var bindingDispatched = 0;
 
-		v.returnMyObj.bindx(function(_) bindingDispatched++ );
+		v.returnMyObj.bindx(function() bindingDispatched++ );
 
 		for(i in 0...times)
 			Bind.notify(v.returnMyObj);
 
-		assertEquals(times, bindingDispatched);
+		assertEquals(times + 1, bindingDispatched);
 	}
 
 	public function testBind() {
@@ -32,8 +32,7 @@ class TestFunctionBind extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		v.returnMyObj.bindx(function(_) {
-			assertEquals(0, bindingDispatched);
+		v.returnMyObj.bindx(function() {
 
 			assertEquals(obj, v.returnMyObj());
 
@@ -41,6 +40,7 @@ class TestFunctionBind extends AbstractBindxTest
 		});
 
 		Bind.notify(v.returnMyObj);
+		assertEquals(2, bindingDispatched);
 	}
 
 	public function testUnbind() {
@@ -49,11 +49,13 @@ class TestFunctionBind extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		v.returnMyObj.unbindx(function(_) bindingDispatched++ );
+		var unBind = v.returnMyObj.bindx(function() bindingDispatched++ );
+
+		unBind();
 
 		Bind.notify(v.returnMyObj);
 
-		assertEquals(0, bindingDispatched);
+		assertEquals(0 + 1, bindingDispatched); // +1 AUTO
 	}
 }
 

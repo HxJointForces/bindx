@@ -1,8 +1,7 @@
 -cp src
 -cp test
 -neko bin/bindx-test.n
-#-main TestRunner
--main TestDeepBind
+-main TestRunner
 --times
 -D macro-times
 

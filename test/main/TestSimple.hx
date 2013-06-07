@@ -15,11 +15,13 @@ class TestSimple extends AbstractBindxTest
 		var bindingDispatched = 0;
 
 		v.def.bindx(function(oldValue, newValue) {
-			assertEquals(0, bindingDispatched);
-
-			assertEquals(oldDef, oldValue);
-			assertEquals(newDef, newValue);
-
+			if (bindingDispatched == 0) {
+				assertEquals(null, oldValue);
+				assertEquals(newValue, oldDef);
+			} else {
+				assertEquals(oldDef, oldValue);
+				assertEquals(newDef, newValue);
+			}
 			bindingDispatched++;
 		});
 
@@ -37,7 +39,7 @@ class TestSimple extends AbstractBindxTest
 		for(i in 0...times)
 			v.def = i;
 
-		assertEquals(times, bindingDispatched);
+		assertEquals(times + 1, bindingDispatched);
 	}
 
 	public function testSimpleUnbind() {
@@ -45,10 +47,11 @@ class TestSimple extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		v.def.unbindx(function(oldValue, newValue) bindingDispatched++ );
+		var unbind = v.def.bindx(function(oldValue, newValue) bindingDispatched++ );
+		unbind();
 
 		v.def = 42;
 
-		assertEquals(0, bindingDispatched);
+		assertEquals(0 + 1, bindingDispatched); // 1 auto call
 	}
 }

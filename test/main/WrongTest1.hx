@@ -14,7 +14,7 @@ class WrongTest1  extends AbstractBindxTest
 		var v = createValue();
 
 		v.def.bindx(function(_,_) {});
-		v.toString.bindx(function(_) {});
+		v.toString.bindx(function() {});
 
 		assertTrue(true);
 	}

@@ -30,7 +30,7 @@ class TestSubClass extends TestCase
 		b2.b1 = "b";
 		b2.b2 = "c";
 
-		assertEquals("abc", info);
+		assertEquals("112abc", info);
 	}
 }
 
@@ -44,10 +44,10 @@ class Bind1 extends Bind0 implements IBindable {
 		super();
 	}
 
-	@bindable public var b1:String;
+	@bindable public var b1:String = "1";
 }
 
 @bindable class Bind2 extends Bind1 {
 
-	public var b2:String;
+	public var b2:String = "2";
 }

@@ -26,8 +26,8 @@ class TestBasicBind extends TestCase
 			globalCall ++;
 		});
 		
-		var methodListener = function (newValue:String) { toStringCall ++; };
-		v.toString.bindx(function (newValue) { toStringCall ++; } );
+		var methodListener = function () { toStringCall ++; };
+		v.toString.bindx(function () { toStringCall ++; } );
 		v.toString.bindx(methodListener);
 		
 		v.def = 12;
@@ -38,13 +38,13 @@ class TestBasicBind extends TestCase
 		v.s = null;
 		
 		var listener = function (old:Float, val:MyInt) { aCall ++; }
-		v.a.bindx(listener);
+		var unbindVA = v.a.bindx(listener);
 		v.a = 4;
-		v.a.unbindx(listener);
+		unbindVA();
 		v.a = 5;
 
-		assertEquals(aCall, 1);
-		assertEquals(toStringCall, 2 * 2);
+		assertEquals(aCall, 1 + 1);
+		assertEquals(toStringCall, 2 * 2 + 2); // +2 auto
 		assertEquals(lastS, "");
 		assertEquals(Type.getClass(lastS), String);
 	}
