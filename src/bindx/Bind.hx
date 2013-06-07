@@ -19,7 +19,8 @@ typedef FieldCall = {
 	var classField:ClassField;
 	var type:Type;
 	var bindable:Bool;
-	var method:{type:Type, args:Array<{e:Expr, fields:Array<FieldCall>}>};
+	var depth:Int;
+	var method:{args:Array<{e:Expr}>};
 }
 
 class Bind {
@@ -29,17 +30,13 @@ class Bind {
 		inline static var LISTENER_PREFIX = "listener";
 	#end
 
-	macro static public function bindx(expr:Expr, listener:Expr):ExprOf<Void->Void> {
+	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf<Void->Void> {
 		
 		var fields:Array<FieldCall> = [];
 		
-		checkField(expr, fields);
+		checkField(expr, fields, 0, true, recursive ? 1000000 : 0);
 		checkFunction(listener, fields[fields.length - 1], true);
 
-		/*for (f in fields) {
-			trace(f);
-			trace("");
-		}*/
 		var first = fields.shift();
 		
 		var res = [];
@@ -169,6 +166,7 @@ class Bind {
 				res.push(macro $listenerNameExpr());
 			else
 				res.push(macro $listenerNameExpr(null, $ { first.e } .$firstFieldName));
+			
 			unbinds.push(getBindMacro(false, first.e, firstFieldName, listenerNameExpr, first.classField));
 			unbinds.push(macro $listenerNameExpr = null);
 		}
@@ -177,7 +175,7 @@ class Bind {
 		res.push(macro return function () $b{unbinds});
 		
 		var result = macro (function (_) $b { res })(this);
-		trace(result.toString());
+		//trace(result.toString());
 		return result;
 	}
 	
@@ -191,7 +189,7 @@ class Bind {
 	
 	macro static public function notify(field:Expr) {
 		var fields:Array<FieldCall> = [];
-		checkField(field, fields, 0);
+		checkField(field, fields, 0, false);
 		
 		var f = fields[fields.length - 1];
 		if (f.method != null) {
@@ -202,14 +200,9 @@ class Bind {
 			if (f.method.args.length > 0)
 				Context.error("can't notify method with args", field.pos);
 				
-			var fieldName = f.f;
-			switch (f.classField.type) {
-				case TFun(_, ret):
-					if (ret.toString() == "Void")
-						Context.error("can't notify Void return function", field.pos);
-				case _:
-			}
-			return macro $ { f.e } .__methodBindings__.dispatch($v { fieldName });  // $ { f.e }.$fieldName ($a{args})
+			if (f.type.toString() == "Void")
+				Context.error("can't notify Void return function", field.pos);
+			return macro $ { f.e } .__methodBindings__.dispatch($v { f.f });  // $ { f.e }.$fieldName ($a{args})
 		} else {
 			
 			Context.error("notify works only with methods", field.pos);
@@ -228,26 +221,18 @@ class Bind {
 		}
 	}
 	
-	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth:Int = 0, warnNonBindable = true):Void {
+	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth = 100000):Void {
 		
+		if (depth > maxDepth) return ;
 		switch (expr.expr) {
 			
 			case ECall(e, params):
-				//trace("call");
-				var lfields = [];
-				checkField(e, lfields, depth);
+				checkField(e, fields, depth, warnNonBindable, maxDepth);
 
-				var args = [];
-				for (p in params) {
-					var f = [];
-					checkField(p, f, 1, warnNonBindable);
-					args.push({e:p, fields:f});
-				}
-				//trace(lfields);
+				var args = [for (p in params) { e:p }];
 
-				var last = lfields[lfields.length - 1];
-				last.method = {args:args, type:Context.typeof(e)};
-				for (f in lfields) fields.push(f);
+				var last = fields[fields.length - 1];
+				last.method = {args:args};
 			
 			case EField(e, f):
 				
@@ -292,37 +277,38 @@ class Bind {
 							Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
 				}
 				
-				checkField(e, fields, depth + 1, warnNonBindable);
-
 				var method = null;
 				
 				switch (classField.kind) {
 					case FMethod(k): 
-						method = { args:[], type:null };
-						switch(Context.typeof(expr)) {
+						method = { args:[] };
+						/*switch(Context.typeof(expr)) {
 							case TFun(_, ret): method.type = ret;
 							case _: null;
-						}
+						}*/
 						
 					case FVar(_, _):
 				}
 				
-				fields.push( {
-					e:e,
-					f:f,
-					classField:classField,
-					type:type,
-					bindable:bindable,
+				fields.unshift( {
+					e: e,
+					f: f,
+					classField: classField,
+					type: type,
+					bindable: bindable,
+					depth: depth,
 					method:method
 				} );
+				
+				checkField(e, fields, depth + 1, warnNonBindable, maxDepth);
 				
 			case EConst(CIdent(_)): 
 				if (depth == 0)
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
 					
 			case _ :
-				trace(depth);
-				trace(expr);
+				//trace(depth);
+				//trace(expr);
 				if (depth == 0) {
 					
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
@@ -334,7 +320,7 @@ class Bind {
 	inline static private function checkFunction(listener:Expr, field:FieldCall, bind:Bool) {
 
 		var argsNum = field.method != null ? 0 : 2;
-		var reassign = field.method != null ? field.method.type : field.classField.type;
+		var reassign = field.method != null ? field.type : field.classField.type;
 		
 		var ok = false;
 		switch (listener.expr) {
