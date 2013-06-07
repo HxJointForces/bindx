@@ -28,13 +28,15 @@ class Bind {
 	#if macro
 		inline static var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
 		inline static var LISTENER_PREFIX = "listener";
+		
+		inline static var MAX_DEPTH = 100000;
 	#end
 
 	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf<Void->Void> {
 		
 		var fields:Array<FieldCall> = [];
 		
-		checkField(expr, fields, 0, true, recursive ? 1000000 : 0);
+		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
 		checkFunction(listener, fields[fields.length - 1], true);
 
 		var first = fields.shift();
@@ -222,7 +224,7 @@ class Bind {
 		}
 	}
 	
-	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth = 100000):Void {
+	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth = MAX_DEPTH):Void {
 		
 		if (depth > maxDepth) return ;
 		switch (expr.expr) {
