@@ -193,7 +193,7 @@ class Bind {
 		var fields:Array<FieldCall> = [];
 		checkField(field, fields, 0, false, 0);
 		
-		var f = fields[fields.length - 1];
+		var f = fields[0];
 		if (f.method != null) {
 			
 			if (!f.bindable)
