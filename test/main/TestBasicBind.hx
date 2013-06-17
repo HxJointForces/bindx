@@ -47,8 +47,19 @@ class TestBasicBind extends TestCase
 		assertEquals(toStringCall, 2 * 2 + 2); // +2 auto
 		assertEquals(lastS, "");
 		assertEquals(Type.getClass(lastS), String);
+		
 	}
 	
+}
+
+typedef TypeDef = {
+	@bindable var x:Float;
+}
+
+enum EnumA {
+	CtorA;
+	CtorB(i:Int);
+	CtorC(s:String);
 }
 
 typedef MyInt = Int;

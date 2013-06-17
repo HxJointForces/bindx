@@ -250,10 +250,10 @@ class Bind {
 						
 						if (!BindMacros.isIBindable(classType)) {
 							if (depth == 0)
-								Context.error("can't bind expr", e.pos);
+								Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
 							else {
-								if (warnNonBindable) Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
 								bindable = false;
+								if (warnNonBindable) Context.warning('"${e.toString()}" is not bindx.IBindable', e.pos);
 							}
 						}
 
@@ -261,8 +261,8 @@ class Bind {
 							for (cf in classType.fields.get()) {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
-										if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 										bindable = false;
+										if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 									}
 									classField = cf;
 									break;
@@ -273,11 +273,13 @@ class Bind {
 						}
 					
 					case _:
-						bindable = false;
 						if (depth == 0)
-							Context.error('can\'t bind expr "${expr.toString()}"', e.pos);
-						else if (warnNonBindable)
-							Context.warning('"${e.toString()}" must be bindx.IBindable', e.pos);
+							Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
+						else {
+							bindable = false;
+							if (warnNonBindable) 
+								Context.warning('"${e.toString()}" is not bindx.IBindable', e.pos);
+						}
 				}
 				
 				var method = null;
