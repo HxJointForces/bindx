@@ -33,6 +33,18 @@ class TestBindTo extends TestCase {
 		assertEquals(a.t, 15);
 	}
 	
+	function testBindToMethod() {
+		var v = new Value();
+		v.a = 12;
+		v.def = 0;
+		v.s = "s";
+		
+		var s = "";
+		v.toString.bindxTo(s);
+		
+		assertEquals(s, "12 + 0 + s");
+	}
+	
 }
 
 private typedef MyInt = Int;

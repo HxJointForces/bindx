@@ -94,10 +94,10 @@ class Bind {
 						if (prev.method != null) 
 							listeners.unshift(macro var $listenerName = function() {
 								var o = $listenerTargetExpr;
-								var n = $ { f.e };
 								if (o != null)
 									${getBindMacro(false, macro o, fieldName, nextListenerNameExpr, f.classField)}
 
+								var n = $ { f.e };
 								$listenerTargetExpr = n;
 								$listener;
 							});
@@ -171,10 +171,11 @@ class Bind {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
-		
-		var listener = if (fields[fields.length-1].method != null) {
+		var field = fields[fields.length - 1];
+		var fname = field.f;
+		var listener = if (field.method != null) {
 				macro function () {
-					$target = $expr;
+					$target = ${field.e}.$fname();
 				}
 			} else {
 				macro function (_, b) {

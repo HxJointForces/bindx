@@ -19,7 +19,7 @@ class TestDeepBind extends TestCase
 		var num = 0;
 		
 		var t = a.b;
-		a.b.getC(34).toString.bindx(function() num++, true);
+		a.b.getC().toString.bindx(function() num++, true);
 
 		Bind.notify(a.b.c.toString);
 		a.b.c.d = "23";
@@ -95,7 +95,7 @@ class B implements IBindable {
 		return v;
 	}
 	
-	@bindable public function getC(i:Int):C {
+	@bindable public function getC():C {
 		return c;
 	}
 	
