@@ -62,7 +62,7 @@ enum EnumA {
 	CtorC(s:String);
 }
 
-typedef MyInt = Int;
+private typedef MyInt = Int;
 
 @bindable class Value implements IBindable {
 	
