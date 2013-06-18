@@ -17,7 +17,7 @@ class TestBindTo extends TestCase {
 		var v = new Value();
 		v.a = 12;
 		
-		var a = { t:10 };
+		var a = { t:0 };
 		var unbind = v.a.bindxTo(a.t);
 		
 		assertEquals(a.t, 12);

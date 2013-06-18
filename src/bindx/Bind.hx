@@ -20,7 +20,7 @@ typedef FieldCall = {
 	var type:Type;
 	var bindable:Bool;
 	var depth:Int;
-	var method:{args:Array<{e:Expr}>};
+	var method:{retType:Type, args:Array<{e:Expr}>};
 }
 
 class Bind {
@@ -166,18 +166,29 @@ class Bind {
 		}
 	#end
 	
-		macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false) {
+	macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false) {
 		
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
 		var field = fields[fields.length - 1];
+		
 		var fname = field.f;
+		var targetType = Context.typeof(target);
 		var listener = if (field.method != null) {
+
+				if (!Context.unify(field.method.retType, targetType)) {
+					Context.error('${targetType.toString()} should be ${field.method.retType.toString()}', target.pos);
+				}
+				
 				macro function () {
 					$target = ${field.e}.$fname();
 				}
 			} else {
+				if (!Context.unify(field.classField.type, targetType)) {
+					Context.error('${targetType.toString()} should be ${field.classField.type.toString()}', target.pos);
+				}
+		
 				macro function (_, b) {
 					$target = b;
 				}
@@ -269,7 +280,10 @@ class Bind {
 				var args = [for (p in params) { e:p }];
 
 				var last = fields[fields.length - 1];
-				last.method = {args:args};
+				last.method = {args:args, retType:switch(Context.typeof(e)) {
+							case TFun(_, ret): ret;
+							case _: null;
+						}};
 			
 			case EField(e, f):
 				
@@ -320,11 +334,10 @@ class Bind {
 				
 				switch (classField.kind) {
 					case FMethod(k): 
-						method = { args:[] };
-						/*switch(Context.typeof(expr)) {
-							case TFun(_, ret): method.type = ret;
+						method = { args:[], retType : switch(Context.typeof(expr)) {
+							case TFun(_, ret): ret;
 							case _: null;
-						}*/
+						}};
 						
 					case FVar(_, _):
 				}
@@ -373,7 +386,7 @@ class Bind {
 					if (argType == null) {
 						if (bind) f.args[i].type = reassign.toComplexType();
 					} else if (!Context.unify(reassign, argType.toType()))
-						Context.error('listener argument type mismatch ${reassign.toString()} vs ${argType.toString()}', listener.pos);
+						Context.error('${argType.toString()} should be ${reassign.toString()}', listener.pos);
 				}
 				ok = true;
 				
@@ -387,7 +400,7 @@ class Bind {
 				
 				for (i in 0...argsNum)
 					if (!Context.unify(reassign, args[i].t))
-						Context.error('listener argument type mismatch ${reassign.toString()} vs ${args[i].t.toString()}', listener.pos);
+						Context.error('${args[i].t.toString()} should be ${reassign.toString()}', listener.pos);
 				
 			case _:
 				Context.error('listener must be a function', listener.pos);
