@@ -28,17 +28,23 @@ class Bind {
 	#if macro
 		inline static var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
 		inline static var LISTENER_PREFIX = "listener";
+		inline static var LISTENER_0_NAME = LISTENER_PREFIX + "0";
 		
 		inline static var MAX_DEPTH = 100000;
 		
+		static var listener0NameExpr:Expr;
+		
+		static function init() {
+			listener0NameExpr = macro $i { LISTENER_0_NAME };
+		}
+		
 		inline static function doBind(fields:Array<FieldCall>, listener:Expr, res:Array<Expr>, unbinds:Array<Expr>) {
 			
+			if (listener0NameExpr == null) init();
 			var first = fields.shift();
 			var listeners = [];
-			var listener0Name = LISTENER_PREFIX + "0";
-			var listener0NameExpr = macro $i { listener0Name };
 			
-			res.push(macro var $listener0Name = $listener);
+			res.push(macro var $LISTENER_0_NAME = $listener);
 			
 			var firstFieldName = first.f;
 			if (fields.length == 0) {
@@ -58,7 +64,7 @@ class Bind {
 					
 					var f = fields[i++];
 					listenerName = LISTENER_PREFIX + i;
-					var nextListenerName = i == fields.length ? listener0Name : LISTENER_PREFIX + (i + 1);
+					var nextListenerName = i == fields.length ? LISTENER_0_NAME : LISTENER_PREFIX + (i + 1);
 					var nextListenerNameExpr = macro $i { nextListenerName };
 					var listenerTarget = nextListenerName + "target";
 					var listenerTargetExpr = macro $i { listenerTarget };
@@ -175,23 +181,20 @@ class Bind {
 		
 		var fname = field.f;
 		var targetType = Context.typeof(target);
-		var listener = if (field.method != null) {
-
-				if (!Context.unify(field.method.retType, targetType)) {
-					Context.error('${targetType.toString()} should be ${field.method.retType.toString()}', target.pos);
-				}
-				
-				macro function () {
-					$target = ${field.e}.$fname();
-				}
-			} else {
-				if (!Context.unify(field.classField.type, targetType)) {
-					Context.error('${targetType.toString()} should be ${field.classField.type.toString()}', target.pos);
-				}
+		var listener = null;
 		
-				macro function (_, b) {
-					$target = b;
-				}
+		if (field.method != null) {
+
+				if (!Context.unify(field.method.retType, targetType))
+					Context.error('${targetType.toString()} should be ${field.method.retType.toString()}', target.pos);
+				
+				listener = macro function () $target = ${field.e}.$fname();
+			} else {
+				
+				if (!Context.unify(field.classField.type, targetType))
+					Context.error('${targetType.toString()} should be ${field.classField.type.toString()}', target.pos);
+				
+				listener = macro function (_, b) $target = b;
 			}
 		//checkFunction(listener, fields[fields.length - 1], true);
 		
@@ -253,7 +256,7 @@ class Bind {
 			return macro $ { f.e } .__methodBindings__.dispatch($v { f.f });  // $ { f.e }.$fieldName ($a{args})
 		} else {
 			
-			Context.error("notify works only with methods", field.pos);
+			Context.error("Bind.notify works only with methods", field.pos);
 			return null;
 		}
 	}
@@ -269,7 +272,7 @@ class Bind {
 		}
 	}
 	
-	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth = MAX_DEPTH):Void {
+	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth:Int):Void {
 		
 		if (depth > maxDepth) return ;
 		switch (expr.expr) {
@@ -372,7 +375,7 @@ class Bind {
 	inline static private function checkFunction(listener:Expr, field:FieldCall, bind:Bool) {
 
 		var argsNum = field.method != null ? 0 : 2;
-		var reassign = field.method != null ? field.type : field.classField.type;
+		var reassign = field.method != null ? field.method.retType : field.classField.type;
 		
 		var ok = false;
 		switch (listener.expr) {
