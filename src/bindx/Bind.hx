@@ -301,10 +301,10 @@ class Bind {
 						
 						if (!BindMacros.isIBindable(classType)) {
 							if (depth == 0)
-								Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
+								Context.error('"${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 							else {
 								bindable = false;
-								if (warnNonBindable) Context.warning('"${e.toString()}" is not bindx.IBindable', e.pos);
+								if (warnNonBindable) Context.warning('"${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 							}
 						}
 
@@ -325,11 +325,11 @@ class Bind {
 					
 					case _:
 						if (depth == 0)
-							Context.error('"${e.toString()}" must be bindx.IBindable', e.pos);
+							Context.error('"${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						else {
 							bindable = false;
 							if (warnNonBindable) 
-								Context.warning('"${e.toString()}" is not bindx.IBindable', e.pos);
+								Context.warning('"${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						}
 				}
 				
