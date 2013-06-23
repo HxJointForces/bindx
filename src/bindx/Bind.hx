@@ -34,15 +34,16 @@ class Bind {
 		
 		static var listener0NameExpr:Expr;
 		
-		static function init() {
+		static function __init__() {
 			listener0NameExpr = macro $i { LISTENER_0_NAME };
 		}
 		
-		inline static function doBind(fields:Array<FieldCall>, listener:Expr, res:Array<Expr>, unbinds:Array<Expr>) {
+		inline static function doBind(fields:Array<FieldCall>, listener:Expr):Expr {
 			
-			if (listener0NameExpr == null) init();
 			var first = fields.shift();
 			var listeners = [];
+			var res = [];
+			var unbinds = [];
 			
 			res.push(macro var $LISTENER_0_NAME = $listener);
 			
@@ -169,11 +170,25 @@ class Bind {
 				unbinds.push(macro $listenerNameExpr = null);
 			}
 			unbinds.push(macro $listener0NameExpr = null);
+			
+			res.push(macro return function () $b{unbinds});
+		
+			var result = macro (function (_) $b { res } )(this);
+			
+			return result;
 		}
 	#end
 	
-	macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false) {
-		
+	macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false):ExprOf<Void->Void> {
+		return bindTo(expr, target, recursive);
+	}
+	
+	#if macro
+	static public function _bindxTo(expr:Expr, target:Expr, recursive:Bool = false):ExprOf<Void->Void> {
+		return bindTo(expr, target, recursive);
+	}
+	
+	inline static function bindTo(expr:Expr, target:Expr, recursive:Bool):ExprOf<Void->Void> {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
@@ -196,38 +211,32 @@ class Bind {
 				
 				listener = macro function (_, b) $target = b;
 			}
-		//checkFunction(listener, fields[fields.length - 1], true);
 		
-		var res = [];
-		var unbinds = [];
-		
-		doBind(fields, listener, res, unbinds);
-		
-		res.push(macro return function () $b{unbinds});
-		
-		var result = macro (function (_) $b { res })(this);
-		//trace(result.toString());
-		return result;
+		return doBind(fields, listener);
 	}
+	#end
 
 	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf<Void->Void> {
 		
+		return exprBind(expr, listener, recursive);
+	}
+	
+	#if macro
+	
+	static public function _bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf < Void->Void > {
+		
+		return exprBind(expr, listener, recursive);
+	}
+	
+	inline static function exprBind(expr:Expr, listener:Expr, recursive:Bool):ExprOf < Void->Void > {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
 		checkFunction(listener, fields[fields.length - 1], true);
 		
-		var res = [];
-		var unbinds = [];
-		
-		doBind(fields, listener, res, unbinds);
-		
-		res.push(macro return function () $b{unbinds});
-		
-		var result = macro (function (_) $b { res })(this);
-		//trace(result.toString());
-		return result;
+		return doBind(fields, listener);
 	}
+	#end
 	
 	inline static public function bindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
 		bindable.__fieldBindings__.addGlobal(listener);
@@ -272,7 +281,7 @@ class Bind {
 		}
 	}
 	
-	static private function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth:Int):Void {
+	static function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth:Int):Void {
 		
 		if (depth > maxDepth) return ;
 		switch (expr.expr) {
@@ -372,7 +381,7 @@ class Bind {
 		}
 	}
 	
-	inline static private function checkFunction(listener:Expr, field:FieldCall, bind:Bool) {
+	inline static function checkFunction(listener:Expr, field:FieldCall, bind:Bool) {
 
 		var argsNum = field.method != null ? 0 : 2;
 		var reassign = field.method != null ? field.method.retType : field.classField.type;
