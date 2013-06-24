@@ -1,13 +1,14 @@
 package bindx;
 
+#if macro
 import haxe.macro.Expr.TypePath;
 import haxe.macro.Type;
-
+#end
 /**
  * ...
  * @author deep <system.grand@gmail.com>
  */
-class BindTools
+class BindMacroTools
 {
 	#if macro
 	
