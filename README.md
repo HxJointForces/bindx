@@ -9,7 +9,7 @@ Powerful and fast macro-based data binding engine inspired by Flex Bindings with
 *Basic Usage*
 
 Bind field
-```
+```actionscript
 @bindable class Value implements IBindable {
 	
 	public var a:Int;
@@ -39,7 +39,7 @@ unbindTo();
 
 
 Bind method
-```
+```actionscript
 using bindx.Bind;
 
 class Value implements IBindable {
