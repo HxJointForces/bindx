@@ -38,6 +38,25 @@ class Bind {
 			listener0NameExpr = macro $i { LISTENER_0_NAME };
 		}
 		
+		static function getNullValue(type:Type):Dynamic {
+			type = Context.follow(type, false);
+			return switch (type) {
+				case TAbstract(t, _): 
+					
+				var bt = t.get();
+				if (bt.pack.length == 0)
+					switch (bt.name) {
+						case "Float" : 0.0;
+						case "Int" : 0;
+						case "Bool" : false;
+						case _ : null;
+					}
+				else null;
+				
+				case _: null;
+			}
+		}
+		
 		inline static function doBind(fields:Array<FieldCall>, listener:Expr):Expr {
 			
 			var first = fields.shift();
@@ -49,12 +68,12 @@ class Bind {
 			
 			var firstFieldName = first.f;
 			if (fields.length == 0) {
-
+				
 				res.push(getBindMacro(true, first.e, firstFieldName, listener0NameExpr, first.classField));
 				if (first.method != null)
 					res.push(macro $listener0NameExpr());
 				else
-					res.push(macro $listener0NameExpr(null, $ { first.e } .$firstFieldName));
+					res.push(macro $listener0NameExpr($v{getNullValue(first.classField.type)}, $ { first.e } .$firstFieldName));
 				unbinds.push(getBindMacro(false, first.e, firstFieldName, listener0NameExpr, first.classField));
 				
 			} else {
@@ -94,7 +113,7 @@ class Bind {
 							listener = macro
 									if (n != null) {
 										${getBindMacro(true, macro n, fieldName, nextListenerNameExpr, f.classField)}
-										$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+										$nextListenerNameExpr(o != null ? o.$fieldName : $v{getNullValue(f.classField.type)}, n.$fieldName);
 									} 
 						}
 						
@@ -134,7 +153,7 @@ class Bind {
 							
 							listener = macro
 								if (n != null)
-									$nextListenerNameExpr(o != null ? o.$fieldName : null, n.$fieldName);
+									$nextListenerNameExpr(o != null ? o.$fieldName : $v{getNullValue(f.classField.type)}, n.$fieldName);
 						}
 						if (prev.method != null) {
 							
