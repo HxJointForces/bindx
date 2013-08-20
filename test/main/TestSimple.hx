@@ -16,7 +16,7 @@ class TestSimple extends AbstractBindxTest
 
 		v.def.bindx(function(oldValue, newValue) {
 			if (bindingDispatched == 0) {
-				assertEquals(null, oldValue);
+				assertEquals(0, oldValue);
 				assertEquals(newValue, oldDef);
 			} else {
 				assertEquals(oldDef, oldValue);
@@ -34,10 +34,10 @@ class TestSimple extends AbstractBindxTest
 		var times = 5;
 		var bindingDispatched = 0;
 
-		v.def.bindx(function(oldValue, newValue) bindingDispatched++ );
+		v.def.bindx(function(oldValue, newValue) { bindingDispatched++; } );
 
 		for(i in 0...times)
-			v.def = i;
+			v.def = i+1;
 
 		assertEquals(times + 1, bindingDispatched);
 	}
