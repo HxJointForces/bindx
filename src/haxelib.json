@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": [ "bind", "bindings", "flex", "cross", "HxJointForces" ],
   "description": "Powerful and fast macro-based data binding engine inspired by Flex Bindings with easy-to-use syntax.",
-  "version": "1.0.0-beta",
-  "releasenote": "Initial release",
-  "contributors": [ "HxJointForces" ]
+  "version": "1.0.1-beta",
+  "releasenote": "force bindidable",
+  "contributors": [ "hxJointForces" ]
 }

@@ -115,28 +115,29 @@ class BindMacros
 					add.push(genSetter(f.name, ct, f.pos));
 					
 				case FProp(get, set, ct, e):
-					switch (set) {
-						case "never", "dynamic", "null":
-							var force = false;
-							for (m in f.meta) {
-								if (m.name == BINDING_META_NAME) {
-									for (p in m.params) {
-										switch (p.expr) {
-											case EObjectDecl(fields):
-												for (f in fields) {
-													if (f.field == "force" && f.expr.toString() == "true") {
-														force = true;
-														break;
-													}
-												}
-											case _:
+					var force = false;
+					for (m in f.meta) {
+						if (m.name == BINDING_META_NAME) {
+							for (p in m.params) {
+								switch (p.expr) {
+									case EObjectDecl(fields):
+										for (f in fields) {
+											if (f.field == "force" && f.expr.toString() == "true") {
+												force = true;
+												break;
+											}
 										}
-									}
-									break;
+									case _:
 								}
 							}
-							if (!force)
-								Context.error('can\'t bind "$set" write-access variable', f.pos);
+							break;
+						}
+					}
+					if (force) continue;
+							
+					switch (set) {
+						case "never", "dynamic", "null":
+							Context.error('can\'t bind "$set" write-access variable', f.pos);
 							
 						case "default":
 							f.kind = FProp(get, "set", ct, e);
