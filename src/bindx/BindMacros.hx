@@ -63,9 +63,14 @@ class BindMacros
 					continue;
 				
 				switch (f.kind) {
-					case FProp(_, _, _, _), FVar(_, _):
+					case FVar(_, _):
 						f.meta.push( { name:BINDING_META_NAME, params:[], pos:f.pos } );
 						toBind.push(f);
+					case FProp(_, set, _, _):
+						if (set == "default" || set == "set") {
+							f.meta.push( { name:BINDING_META_NAME, params:[], pos:f.pos } );
+							toBind.push(f);
+						}
 					case FFun(_):
 				}
 			}
@@ -111,10 +116,29 @@ class BindMacros
 					
 				case FProp(get, set, ct, e):
 					switch (set) {
-						case "never", "dynamic":
-							Context.error('can\'t bind $set write-access variable', f.pos);
+						case "never", "dynamic", "null":
+							var force = false;
+							for (m in f.meta) {
+								if (m.name == BINDING_META_NAME) {
+									for (p in m.params) {
+										switch (p.expr) {
+											case EObjectDecl(fields):
+												for (f in fields) {
+													if (f.field == "force" && f.expr.toString() == "true") {
+														force = true;
+														break;
+													}
+												}
+											case _:
+										}
+									}
+									break;
+								}
+							}
+							if (!force)
+								Context.error('can\'t bind "$set" write-access variable', f.pos);
 							
-						case "default", "null":
+						case "default":
 							f.kind = FProp(get, "set", ct, e);
 							add.push(genSetter(f.name, ct, f.pos));
 							
@@ -216,10 +240,10 @@ class BindMacros
 	
 	static var setterField:String;
 	
-	static function addBindingInSetter(e:Expr):Expr {
-		return switch (e.expr) {
+	static function addBindingInSetter(expr:Expr):Expr {
+		return switch (expr.expr) {
 			case EReturn(e) :
-				
+				if (e == null) Context.error("setter must return value", expr.pos);
 				switch (e.expr) {
 					case EConst(c):
 						macro {
@@ -234,7 +258,7 @@ class BindMacros
 						}
 				}
 				
-			case _: e.map(addBindingInSetter);
+			case _: expr.map(addBindingInSetter);
 		}
 	}
 
