@@ -29,6 +29,7 @@ class Bind {
 		inline static var FIELD_BINDINGS_NAME = BindMacros.FIELD_BINDINGS_NAME;
 		inline static var LISTENER_PREFIX = "listener";
 		inline static var LISTENER_0_NAME = LISTENER_PREFIX + "0";
+		inline static var GETTER_PREFIX = "get_";
 		
 		inline static var MAX_DEPTH = 100000;
 		
@@ -39,6 +40,9 @@ class Bind {
 		}
 		
 		static function getNullValue(type:Type):Dynamic {
+			/*if (Context.defined("js") || Context.defined("neko"))
+				return null;*/
+			
 			type = Context.follow(type, false);
 			return switch (type) {
 				case TAbstract(t, _): 
@@ -193,7 +197,6 @@ class Bind {
 			res.push(macro return function () $b{unbinds});
 		
 			var result = macro (function (_) $b { res } )(this);
-			
 			return result;
 		}
 	#end
@@ -255,6 +258,13 @@ class Bind {
 		
 		return doBind(fields, listener);
 	}
+	
+	inline static function isNullExpr(expr:Expr):Bool {
+		return switch (expr.expr) {
+			case EConst(CIdent("null")): true;
+			case _: false;
+		}
+	}
 	#end
 	
 	inline static public function bindxGlobal<T>(bindable:IBindable, listener:GlobalFieldListener<T>) {
@@ -265,13 +275,16 @@ class Bind {
 		bindable.__fieldBindings__.removeGlobal(listener);
 	}
 	
-	macro static public function notify(field:Expr) {
+	macro static public function notify(field:Expr, ?from:Expr, ?to:Expr) {
 		var fields:Array<FieldCall> = [];
 		checkField(field, fields, 0, false, 0);
 		
 		var f = fields[0];
-		if (f.method != null) {
+		if (f.method != null) { 
 			
+			if (!(isNullExpr(from) && isNullExpr(to)))
+				Context.error("method notify doesn't support from & to params", f.e.pos);
+				
 			if (!f.bindable)
 				Context.error("can't notify non bindable method", f.e.pos);
 				
@@ -284,7 +297,8 @@ class Bind {
 			return macro $ { f.e } .__methodBindings__.dispatch($v { f.f });  // $ { f.e }.$fieldName ($a{args})
 		} else {
 			
-			Context.error("Bind.notify works only with methods", field.pos);
+			//Context.error("Bind.notify works only with methods", field.pos);
+			return macro $ { f.e } .__fieldBindings__.dispatch($v { f.f }, $from, $to);  // $ { f.e }.$fieldName ($a{args})
 			return null;
 		}
 	}
@@ -308,24 +322,26 @@ class Bind {
 			case ECall(e, params):
 				checkField(e, fields, depth, warnNonBindable, maxDepth);
 
-				var args = [for (p in params) { e:p }];
+				//var args = [for (p in params) { e:p }];
 
-				var last = fields[fields.length - 1];
+				/*var last = fields[fields.length - 1];
 				last.method = {args:args, retType:switch(Context.typeof(e)) {
 							case TFun(_, ret): ret;
 							case _: null;
 						}};
+						
+				trace(last);*/
 			
 			case EField(e, f):
-				
 				var type = Context.typeof(e);
 				var classField:ClassField = null;
 				var bindable = true;
-
+				
 				switch (type) {
 					
 					case TInst(t, _): 
-						var classType = t.get();
+						var mainType = t.get();
+						var classType = mainType;
 						
 						if (!BindMacros.isIBindable(classType)) {
 							if (depth == 0)
@@ -335,7 +351,30 @@ class Bind {
 								if (warnNonBindable) Context.warning('"${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 							}
 						}
-
+						
+						if (StringTools.startsWith(f, GETTER_PREFIX)) {
+							var propName = f.substr(GETTER_PREFIX.length);
+							var found = false;
+							while (classType != null) {
+								for (field in classType.fields.get()) {
+									if (field.name == propName) {
+										switch (field.kind) {
+											case FVar(read, _):
+												switch (read) {
+													case AccCall:
+														found = true;
+														f = propName;
+													case _:
+												}
+											case FMethod(_):
+										}
+									}
+								}
+								if (found) break;
+								classType = classType.superClass != null ? classType.superClass.t.get() : null;
+							}
+							if (!found) classType = mainType;
+						}
 						while (classType != null) {
 							for (cf in classType.fields.get()) {
 								if (cf.name == f) {
@@ -362,7 +401,6 @@ class Bind {
 				}
 				
 				var method = null;
-				
 				switch (classField.kind) {
 					case FMethod(k): 
 						method = { args:[], retType : switch(Context.typeof(expr)) {
@@ -396,7 +434,7 @@ class Bind {
 					
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
 				}
-				return null;
+				//return null;
 		}
 	}
 	

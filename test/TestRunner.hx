@@ -1,5 +1,7 @@
 package ;
 
+import main.TestForce;
+import main.TestProperty;
 import main.TestBindTo;
 import main.TestDeepBind;
 import main.TestBasicBind;
@@ -15,6 +17,7 @@ class TestRunner extends haxe.unit.TestRunner
 	public static function main()
 	{
 		var runner = new TestRunner();
+		runner.add(new TestProperty());
 		runner.add(new TestSimple());
 		runner.add(new TestClassLevel());
 		runner.add(new TestFunctionBind());
@@ -24,6 +27,7 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new TestBasicBind());
 		runner.add(new TestDeepBind());
 		runner.add(new TestBindTo());
+		runner.add(new TestForce());
 		runner.run();
 	}
 }

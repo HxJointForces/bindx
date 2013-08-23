@@ -3,7 +3,38 @@
 -neko bin/bindx-test.n
 -main TestRunner
 --times
--D macro-times
+#-D macro-times
 
--D dump=pretty
+#-D dump=pretty
 #--no-inline
+
+--next
+-cp src
+-cp test
+-cpp bin/cpp
+-main TestRunner
+
+--next
+-cp src
+-cp test
+-cs bin/cs
+-main TestRunner
+
+--next
+-cp src
+-cp test
+-java bin/java
+-main TestRunner
+
+--next
+-cp src
+-cp test
+-swf bin/bindx-test.swf
+-swf-version 10
+-main TestRunner
+
+--next
+-cp src
+-cp test
+-js bin/bindx-test.js
+-main TestRunner
