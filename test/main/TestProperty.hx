@@ -35,6 +35,10 @@ class TestProperty extends TestCase {
 		var b = new Bs();
 		var call = 0;
 		a.a.b.bindx(function (from, to) {
+			if (call == 0) {
+				assertEquals(from, 0);
+				assertEquals(to, 10);
+			}
 			call++;
 		}, true);
 		

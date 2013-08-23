@@ -37,7 +37,7 @@ class TestForce extends TestCase
 		v.s = "23";
 		v.s = null;
 		
-		var listener = function (old:Float, val:MyInt) { trace('$old -> $val'); aCall ++; }
+		var listener = function (old:Float, val:MyInt) { aCall ++; }
 		var unbindVA = v.a.bindx(listener);
 		v.a = 4;
 		unbindVA();
