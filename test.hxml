@@ -5,7 +5,8 @@
 --times
 #-D macro-times
 
-#-D dump=pretty
+-D dump=pretty
+-D gencommon-debug
 #--no-inline
 
 --next

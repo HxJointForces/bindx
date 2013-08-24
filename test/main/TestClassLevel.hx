@@ -47,8 +47,9 @@ class TestClassLevel extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		var unbind = v.def.bindx(function(oldValue, newValue) bindingDispatched++ );
-		unbind();
+		var listener = function(oldValue, newValue) bindingDispatched++;
+		var unbind = v.def.bindx(listener);
+		v.def.unbindx(listener);
 
 		v.def = 42;
 

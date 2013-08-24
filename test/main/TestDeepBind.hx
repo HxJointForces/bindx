@@ -19,7 +19,7 @@ class TestDeepBind extends TestCase
 		var num = 0;
 		
 		var t = a.b;
-		a.b.getC().toString.bindx(function() num++, true);
+		a.b.getC().toString.bindx(function() num++);
 
 		Bind.notify(a.b.c.toString);
 		a.b.c.d = "23";

@@ -47,11 +47,19 @@ class TestSimple extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		var unbind = v.def.bindx(function(oldValue, newValue) bindingDispatched++ );
+		var unbind = v.def.bindx(function(oldValue, newValue) bindingDispatched++, true );
 		unbind();
+		
+		var listener = function(oldValue, newValue) bindingDispatched++;
+		v.def.bindx(listener);
+		v.def.unbindx(listener);
+		
+		var listener2;
+		v.def.bindx(listener2 = function(oldValue, newValue) bindingDispatched++);
+		v.def.unbindx(listener2);
 
 		v.def = 42;
 
-		assertEquals(0 + 1, bindingDispatched); // 1 auto call
+		assertEquals(3, bindingDispatched); // 3 auto call
 	}
 }

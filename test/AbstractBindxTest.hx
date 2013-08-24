@@ -23,7 +23,7 @@ class AbstractBindxTest extends TestCase {
 
 class SimpleValue implements IBindable
 {
-	@bindable public var def:Int;
+	@bindable public var def:Int = 0;
 
 	public function new() {
 	}
@@ -35,7 +35,7 @@ class SimpleValue implements IBindable
 
 @bindable class ClassLevelValue implements IBindable
 {
-	@bindable public var def:Int;
+	@bindable public var def:Int = 0;
 
 	public function new() {
 	}

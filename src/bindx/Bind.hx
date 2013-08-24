@@ -40,22 +40,19 @@ class Bind {
 		}
 		
 		static function getNullValue(type:Type):Dynamic {
-			/*if (Context.defined("js") || Context.defined("neko"))
-				return null;*/
-			
 			type = Context.follow(type, false);
 			return switch (type) {
 				case TAbstract(t, _): 
 					
-				var bt = t.get();
-				if (bt.pack.length == 0)
-					switch (bt.name) {
-						case "Float" : 0.0;
-						case "Int" : 0;
-						case "Bool" : false;
-						case _ : null;
-					}
-				else null;
+					var bt = t.get();
+					if (bt.pack.length == 0)
+						switch (bt.name) {
+							case "Float" : 0.0;
+							case "Int" : 0;
+							case "Bool" : false;
+							case _ : null;
+						}
+					else null;
 				
 				case _: null;
 			}
@@ -187,7 +184,7 @@ class Bind {
 				if (first.method != null)
 					res.push(macro $listenerNameExpr());
 				else
-					res.push(macro $listenerNameExpr(null, $ { first.e } .$firstFieldName));
+					res.push(macro $listenerNameExpr($v{getNullValue(first.classField.type)}, $ { first.e } .$firstFieldName));
 				
 				unbinds.push(getBindMacro(false, first.e, firstFieldName, listenerNameExpr, first.classField));
 				unbinds.push(macro $listenerNameExpr = null);
@@ -210,7 +207,7 @@ class Bind {
 		return bindTo(expr, target, recursive);
 	}
 	
-	inline static function bindTo(expr:Expr, target:Expr, recursive:Bool):ExprOf<Void->Void> {
+	inline static function bindTo(expr:Expr, target:Expr, recursive:Bool = true):ExprOf<Void->Void> {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
@@ -238,25 +235,60 @@ class Bind {
 	}
 	#end
 
-	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf<Void->Void> {
-		
+	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):Expr {
 		return exprBind(expr, listener, recursive);
+	}
+	
+	macro static public function unbindx(expr:Expr, listener:Expr) {
+		return _exprUnbind(expr, listener);
 	}
 	
 	#if macro
 	
-	static public function _bindx(expr:Expr, listener:Expr, recursive:Bool = false):ExprOf < Void->Void > {
+	static public function _unbindx(expr:Expr, listener:Expr):Expr {
+		return _exprUnbind(expr, listener);
+	}
+	
+	inline static function _exprUnbind(expr:Expr, listener:Expr) {
+		var fields:Array<FieldCall> = [];
 		
+		checkField(expr, fields, 0, true, 0);
+		
+		var field = fields[0];
+		if (fields.length > 1) throw fields;
+		return getBindMacro(false, field.e, field.f, listener, field.classField);
+	}
+	
+	static public function _bindx(expr:Expr, listener:Expr, recursive:Bool = false):Expr {
 		return exprBind(expr, listener, recursive);
 	}
 	
-	inline static function exprBind(expr:Expr, listener:Expr, recursive:Bool):ExprOf < Void->Void > {
+	inline static function exprBind(expr:Expr, listener:Expr, recursive:Bool):Expr {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
 		checkFunction(listener, fields[fields.length - 1], true);
 		
-		return doBind(fields, listener);
+		return if (recursive)
+				doBind(fields, listener);
+			else {
+				var field = fields[0];
+				var fieldName = field.f;
+				var res = [];
+				switch (listener.expr) {
+					case EBinop(OpAssign, left, right): 
+						res.push(listener);
+						listener = left;
+					case _:
+				}
+				res.push(getBindMacro(true, field.e, field.f, listener, field.classField));
+				if (field.method != null)
+					res.push(macro $listener());
+				else
+					res.push(macro $listener($v { getNullValue(field.classField.type) }, $ { field.e } .$fieldName ));
+				res.push(macro {});
+				macro $b { res };
+			}
 	}
 	
 	inline static function isNullExpr(expr:Expr):Bool {
@@ -297,14 +329,13 @@ class Bind {
 			return macro $ { f.e } .__methodBindings__.dispatch($v { f.f });  // $ { f.e }.$fieldName ($a{args})
 		} else {
 			
-			//Context.error("Bind.notify works only with methods", field.pos);
 			return macro $ { f.e } .__fieldBindings__.dispatch($v { f.f }, $from, $to);  // $ { f.e }.$fieldName ($a{args})
 			return null;
 		}
 	}
 	
 	#if macro
-	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, classField:ClassField) {
+	inline static private function getBindMacro(bind:Bool, field:Expr, fieldName:String, listener:Expr, classField:ClassField):Expr {
 		var m = bind ? "add" : "remove";
 		return switch (classField.kind) {
 			case FVar(_,_):
@@ -431,10 +462,8 @@ class Bind {
 				//trace(depth);
 				//trace(expr);
 				if (depth == 0) {
-					
 					Context.error('"${expr.toString()}" must be field call', expr.pos);
 				}
-				//return null;
 		}
 	}
 	

@@ -27,7 +27,7 @@ class TestForce extends TestCase
 		});
 		
 		var methodListener = function () { toStringCall ++; };
-		v.toString.bindx(function () { toStringCall ++; } );
+		v.toString.bindx(function () { toStringCall ++; });
 		v.toString.bindx(methodListener);
 		
 		v.def = 12;
@@ -38,9 +38,9 @@ class TestForce extends TestCase
 		v.s = null;
 		
 		var listener = function (old:Float, val:MyInt) { aCall ++; }
-		var unbindVA = v.a.bindx(listener);
+		v.a.bindx(listener);
 		v.a = 4;
-		unbindVA();
+		v.a.unbindx(listener);
 		v.a = 5;
 
 		assertEquals(aCall, 1 + 1);

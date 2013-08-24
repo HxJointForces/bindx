@@ -17,13 +17,14 @@ class TestProperty extends TestCase {
 	function testSimple() {
 		var v = new Bs();
 		var newValue = 0.0;
-		var unbind = v.b.bindx(function (from, to) { newValue = to; } );
+		var listener = function (from, to) { newValue = to; }
+		v.b.bindx(listener );
 		
 		v.b = 20;
 		
 		assertEquals(newValue, v.b);
 		
-		unbind();
+		v.b.unbindx(listener);
 		
 		v.b = 10;
 		

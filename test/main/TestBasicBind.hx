@@ -38,16 +38,24 @@ class TestBasicBind extends TestCase
 		v.s = null;
 		
 		var listener = function (old:Float, val:MyInt) { aCall ++; }
-		var unbindVA = v.a.bindx(listener);
+		var unbindVA = v.a.bindx(listener, true);
 		v.a = 4;
 		unbindVA();
 		v.a = 5;
-
+		
 		assertEquals(aCall, 1 + 1);
 		assertEquals(toStringCall, 2 * 2 + 2); // +2 auto
 		assertEquals(lastS, "");
 		assertEquals(Type.getClass(lastS), String);
 		
+		aCall = 0;
+		
+		v.a.bindx(listener);
+		v.a = 6;
+		v.a.unbindx(listener);
+		v.a = 7;
+
+		assertEquals(aCall, 2);
 	}
 	
 }

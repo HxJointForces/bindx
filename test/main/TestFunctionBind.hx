@@ -49,9 +49,10 @@ class TestFunctionBind extends AbstractBindxTest
 
 		var bindingDispatched = 0;
 
-		var unBind = v.returnMyObj.bindx(function() bindingDispatched++ );
+		var listener;
+		var unBind = v.returnMyObj.bindx(listener = function() bindingDispatched++);
 
-		unBind();
+		v.returnMyObj.unbindx(listener);
 
 		Bind.notify(v.returnMyObj);
 
