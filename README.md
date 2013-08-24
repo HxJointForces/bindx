@@ -14,6 +14,18 @@ Bind field
 	
 	public var a:Int;
 	
+	@bindable({force:true}) public var b(get, set):Int;
+	
+	function get_b():Int {
+		return a;
+	}
+	
+	function set_b(v:Int):Int {
+		var old = a;
+		Bind.notify(this.b, old, a = v);
+		return a;
+	}
+	
 	public function new() {
 		
 	}
@@ -35,6 +47,11 @@ v.a = 10; // v.a changed from 12 to 10
 
 unbind();
 unbindTo();
+
+// Bind.unbindx - not recursive only
+var listener = function (from, to) { trace('$from -> $to); };
+v.a.bindx(listener);
+v.a.unbind(listener);
 ```
 
 
