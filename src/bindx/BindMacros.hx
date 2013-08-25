@@ -160,8 +160,10 @@ class BindMacros
 							switch (setter.kind) {
 								case FFun(fn):
 									setterField = f.name;
+									var fieldName = fn.args[0].name;
 									fn.expr = macro {
 										var $OLD_VALUE_NAME = $i { f.name };
+										if ($i { fieldName } == $i{OLD_VALUE_NAME}) return $i{OLD_VALUE_NAME};
 										${fn.expr.map(addBindingInSetter)};
 									}
 									
@@ -219,6 +221,7 @@ class BindMacros
 				case AStatic: Context.error("can't bind static fields", f.pos);
 				case AMacro: Context.error("can't bind macro fields", f.pos);
 				case ADynamic: Context.error("can't bind dynamic fields", f.pos);
+				case AInline: Context.error("can't bind inline fields", f.pos);
 				case _:
 			}
 		}
