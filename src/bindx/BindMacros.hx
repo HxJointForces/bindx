@@ -44,7 +44,6 @@ class BindMacros
 		var hasBindings = false;
 
 		if (classType.meta.get().exists(function (m) return m.name == BINDING_META_NAME)) {
-			var ignoreAccess = [APrivate, AStatic, ADynamic, AMacro];
 
 			for (f in res) {
 				if (f.name == "new") {
@@ -59,9 +58,9 @@ class BindMacros
 					continue;
 				}
 				
-				if (f.access.exists(function (a) return ignoreAccess.has(a)))
+				if (!f.access.has(APublic))
 					continue;
-				
+					
 				switch (f.kind) {
 					case FVar(_, _):
 						f.meta.push( { name:BINDING_META_NAME, params:[], pos:f.pos } );
@@ -101,6 +100,26 @@ class BindMacros
 		var add = [];
 		for (f in toBind) {
 			
+			var force = false;
+			var inlineSetter = true;
+			for (m in f.meta) {
+				if (m.name == BINDING_META_NAME) {
+					for (p in m.params) {
+						switch (p.expr) {
+							case EObjectDecl(fields):
+								for (f in fields) {
+									switch (f.field) {
+										case "inlineSetter": inlineSetter = expr2Bool(f.expr);
+										case "force": force = expr2Bool(f.expr);
+									}
+								}
+							case _: Context.error("unsupported parameters in @bindable() meta", f.pos);
+						}
+					}
+					break;
+				}
+			}
+					
 			switch (f.kind) {
 				
 				case FFun(fun):
@@ -111,37 +130,20 @@ class BindMacros
 					continue;
 					
 				case FVar(ct, e):
+					if (force) continue;
 					f.kind = FProp("default", "set", ct, e);
-					add.push(genSetter(f.name, ct, f.pos));
+					add.push(genSetter(f.name, ct, f.pos, inlineSetter));
 					
 				case FProp(get, set, ct, e):
-					var force = false;
-					for (m in f.meta) {
-						if (m.name == BINDING_META_NAME) {
-							for (p in m.params) {
-								switch (p.expr) {
-									case EObjectDecl(fields):
-										for (f in fields) {
-											if (f.field == "force" && f.expr.toString() == "true") {
-												force = true;
-												break;
-											}
-										}
-									case _:
-								}
-							}
-							break;
-						}
-					}
 					if (force) continue;
 							
 					switch (set) {
 						case "never", "dynamic", "null":
-							Context.error('can\'t bind "$set" write-access variable', f.pos);
+							Context.error('can\'t bind "$set" write-access variable. Use @bindable({force:true})', f.pos);
 							
 						case "default":
 							f.kind = FProp(get, "set", ct, e);
-							add.push(genSetter(f.name, ct, f.pos));
+							add.push(genSetter(f.name, ct, f.pos, inlineSetter));
 							
 						case "set":
 							f.kind = FProp(get, set, ct, e);
@@ -203,6 +205,14 @@ class BindMacros
 	
 	#if macro
 	
+	inline static function expr2Bool(expr:Expr):Bool {
+		return switch (expr.expr) {
+			case EConst(CIdent("true")): true;
+			case EConst(CIdent("false")): false;
+			case _: Context.error("expr must be bool value", expr.pos);
+		}
+	}
+	
 	inline static function checkField(f:Field) {
 		for (a in f.access) {
 			switch (a) {
@@ -214,14 +224,16 @@ class BindMacros
 		}
 	}
 	
-	inline static private function genSetter(name:String, type:ComplexType, pos:Position):Field 
+	inline static private function genSetter(name:String, type:ComplexType, pos:Position, inlineSetter:Bool):Field 
 	{
 		var old = macro $i { OLD_VALUE_NAME };
 		var val = macro $i { VALUE_NAME };
+		var access = [APrivate];
+		if (inlineSetter) access.push(AInline);
 		return {
 			name: "set_" + name,
 			pos: pos,
-			access: [APrivate, AInline],
+			access: access,
 			kind:FFun( {
 				ret:type,
 				params:[],

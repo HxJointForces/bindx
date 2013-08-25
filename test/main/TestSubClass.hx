@@ -44,7 +44,7 @@ class Bind1 extends Bind0 implements IBindable {
 		super();
 	}
 
-	@bindable public var b1:String = "1";
+	@bindable({inlineSetter:false}) public var b1:String = "1";
 }
 
 @bindable class Bind2 extends Bind1 {
