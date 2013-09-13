@@ -29,11 +29,12 @@ class BindMacros
 		var res = Context.getBuildFields();
 		
 		var type = Context.getLocalClass();
+		var classType:ClassType = type.get();
+		if (classType.isInterface) return res;
+		
 		var typeName = type.toString();
 		if (processed.exists(typeName)) return res;
 		processed[typeName] = true;
-
-		var classType:ClassType = type.get();
 
 		var injectSignals = if (classType.superClass != null)
 			!isIBindable(classType.superClass.t.get())
