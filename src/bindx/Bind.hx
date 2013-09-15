@@ -411,7 +411,8 @@ class Bind {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
 										bindable = false;
-										if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
+										if (depth == 0) Context.error('field "${expr.toString()}" is not bindable', expr.pos);
+										else if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 									}
 									classField = cf;
 									break;

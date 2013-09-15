@@ -33,7 +33,7 @@ class TestBasicBind extends TestCase
 		v.def = 12;
 		v.def = 14;
 		
-		v.s.bindx(function (f, t) { lastS = t; } );
+		v.s.bindx(function (f:String, t) { lastS = t; } );
 		v.s = "23";
 		v.s = null;
 		
@@ -54,7 +54,7 @@ class TestBasicBind extends TestCase
 		v.a = 6;
 		v.a.unbindx(listener);
 		v.a = 7;
-
+		
 		assertEquals(aCall, 2);
 	}
 	
