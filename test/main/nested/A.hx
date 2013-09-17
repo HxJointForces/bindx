@@ -10,6 +10,5 @@ class A implements IBindable {
 	@bindable public var a:Int;
 	
 	public function new() {
-		
 	}
 }
