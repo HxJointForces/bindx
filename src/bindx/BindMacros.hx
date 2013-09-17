@@ -248,7 +248,7 @@ class BindMacros
 					else {
 						$i { name } = $val;
 						$i{ FIELD_BINDINGS_NAME }.dispatch($v { name }, $old, $i { name } );
-						return $val;
+						return $i { name };
 					}
 				}
 			})
