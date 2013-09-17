@@ -36,9 +36,13 @@ class BindMacros
 		if (processed.exists(typeName)) return res;
 		processed[typeName] = true;
 
-		var injectSignals = if (classType.superClass != null)
-			!isIBindable(classType.superClass.t.get())
-			else true;
+		var injectSignals = true;
+		var nativeClass = false;
+		if (classType.superClass != null) {
+			var superType = classType.superClass.t.get();
+			injectSignals = !isIBindable(superType);
+			if (injectSignals) nativeClass = superType.meta.has(":native");
+		}
 
 		var toBind = [];
 		var ctor = null;
@@ -194,9 +198,15 @@ class BindMacros
 
 			switch (ctor.kind) {
 				case FFun(f):
-					f.expr = macro {
+					var init = macro {
 						$i { FIELD_BINDINGS_NAME } = new bindx.BindSignal.FieldsBindSignal();
 						$i { METHOD_BINDINGS_NAME } = new bindx.BindSignal.MethodsBindSignal();
+					}
+					if (nativeClass) {
+						initExpr = init;
+						f.expr = f.expr.map(fixNativeCtor);
+					} else f.expr = macro {
+						$init;
 						${f.expr}
 					}
 				case _:
@@ -207,6 +217,16 @@ class BindMacros
 	}
 	
 	#if macro
+	
+	static var initExpr:Expr;
+	static function fixNativeCtor(e:Expr):Expr {
+		return switch (e.expr) {
+			case ECall( { expr:EConst(CIdent("super")) }, params):
+				macro { $e; $initExpr; }
+			case _: 
+				e.map(fixNativeCtor);
+		}
+	}
 	
 	inline static function expr2Bool(expr:Expr):Bool {
 		return switch (expr.expr) {
