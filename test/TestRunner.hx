@@ -1,6 +1,7 @@
 package ;
 
 import main.TestForce;
+import main.TestNested;
 import main.TestProperty;
 import main.TestBindTo;
 import main.TestDeepBind;
@@ -28,6 +29,7 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new TestDeepBind());
 		runner.add(new TestBindTo());
 		runner.add(new TestForce());
+		runner.add(new TestNested());
 		runner.run();
 	}
 }
