@@ -41,7 +41,12 @@ class BindMacros
 		if (classType.superClass != null) {
 			var superType = classType.superClass.t.get();
 			injectSignals = !isIBindable(superType);
-			if (injectSignals) nativeClass = superType.meta.has(":native");
+			if (injectSignals) 
+				while (superType != null) {
+					nativeClass = superType.meta.has(":native");
+					if (nativeClass) break;
+					superType = superType.superClass != null ? superType.superClass.t.get() : null;
+				}
 		}
 
 		var toBind = [];
