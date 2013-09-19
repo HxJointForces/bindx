@@ -1,6 +1,7 @@
 package ;
 
 import main.TestForce;
+import main.TestNative;
 import main.TestNested;
 import main.TestProperty;
 import main.TestBindTo;
@@ -30,6 +31,7 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new TestBindTo());
 		runner.add(new TestForce());
 		runner.add(new TestNested());
+		runner.add(new TestNative());
 		runner.run();
 	}
 }
