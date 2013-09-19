@@ -21,11 +21,11 @@
 -cs bin/cs
 -main TestRunner
 
-#--next
-#-cp src
-#-cp test
-#-java bin/java
-#-main TestRunner
+--next
+-cp src
+-cp test
+-java bin/java
+-main TestRunner
 
 --next
 -cp src
