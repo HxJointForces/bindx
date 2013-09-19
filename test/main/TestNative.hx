@@ -1,7 +1,7 @@
 package main;
 
 /**
- *  @author Dima Granetchi <system.grand@gmail.com>
+ *  @author AxGord <axgord@gmail.com>
  */
 
 import bindx.IBindable;
