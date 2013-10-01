@@ -286,7 +286,7 @@ class Bind {
 		return exprBind(expr, listener, recursive);
 	}
 	
-	static function exprBind(expr:Expr, listener:Expr, recursive:Bool):Expr {
+	inline static function exprBind(expr:Expr, listener:Expr, recursive:Bool):Expr {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
@@ -388,7 +388,6 @@ class Bind {
 				trace(last);*/
 			
 			case EField(e, f):
-
 				var type = Context.typeof(e);
 				var classField:ClassField = null;
 				var bindable = true;
@@ -436,7 +435,8 @@ class Bind {
 								if (cf.name == f) {
 									if (!cf.meta.has(BindMacros.BINDING_META_NAME)) {
 										bindable = false;
-										if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
+										if (depth == 0) Context.error('field "${expr.toString()}" is not bindable', expr.pos);
+										else if (warnNonBindable) Context.warning('field "${expr.toString()}" is not bindable', expr.pos);
 									}
 									classField = cf;
 									break;
@@ -448,11 +448,11 @@ class Bind {
 					
 					case _:
 						if (depth == 0)
-							Context.error('1 "${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
+							Context.error('"${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						else {
 							bindable = false;
 							if (warnNonBindable) 
-								Context.warning('2 "${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
+								Context.warning('"${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						}
 				}
 				
