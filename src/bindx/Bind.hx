@@ -204,11 +204,9 @@ class Bind {
 			        var pos = expr.pos;
 			        //Context.warning("using Bind is deprecated", pos);
 			        var posInfo = Context.getPosInfos(pos);
-			        var f = sys.io.File.read(posInfo.file, false);
-			        f.seek(posInfo.min, sys.io.FileSeek.SeekBegin);
-			        var code = f.readString(posInfo.max - posInfo.min);
-			        f.close();
-			        expr = Context.parseInlineString(code, pos);
+			        var f = sys.io.File.getContent(posInfo.file);
+			        f = f.substring(posInfo.min, posInfo.max);
+			        expr = Context.parseInlineString(f, pos);
 
 			        switch (expr.expr) {
 			        	case EField(e, _): expr = e;
