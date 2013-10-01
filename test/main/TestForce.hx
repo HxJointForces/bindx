@@ -47,7 +47,6 @@ class TestForce extends TestCase
 		assertEquals(toStringCall, 2 * 2 + 2); // +2 auto
 		assertEquals(lastS, "");
 		assertEquals(Type.getClass(lastS), String);
-		
 	}
 	
 }

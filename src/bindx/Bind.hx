@@ -194,11 +194,32 @@ class Bind {
 			res.push(macro return function () $b{unbinds});
 		
 			var result = macro (function (_) $b { res } )(this);
+			//trace(result.toString());
 			return result;
+		}
+
+		inline static function fixExpr(expr:Expr):Expr {
+			switch (expr.expr) {
+	    		case EMeta(_, _):
+			        var pos = expr.pos;
+			        //Context.warning("using Bind is deprecated", pos);
+			        var posInfo = Context.getPosInfos(pos);
+			        var f = sys.io.File.getContent(posInfo.file);
+			        f = f.substring(posInfo.min, posInfo.max);
+			        expr = Context.parseInlineString(f, pos);
+
+			        switch (expr.expr) {
+			        	case EField(e, _): expr = e;
+			        	case _: throw "assert";
+			        }
+	    		case _:
+	    	}
+	    	return expr;
 		}
 	#end
 	
 	macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false):ExprOf<Void->Void> {
+		expr = fixExpr(expr);
 		return bindTo(expr, target, recursive);
 	}
 	
@@ -236,10 +257,12 @@ class Bind {
 	#end
 
 	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):Expr {
+		expr = fixExpr(expr);
 		return exprBind(expr, listener, recursive);
 	}
 	
 	macro static public function unbindx(expr:Expr, listener:Expr) {
+		expr = fixExpr(expr);
 		return _exprUnbind(expr, listener);
 	}
 	
@@ -263,7 +286,7 @@ class Bind {
 		return exprBind(expr, listener, recursive);
 	}
 	
-	inline static function exprBind(expr:Expr, listener:Expr, recursive:Bool):Expr {
+	static function exprBind(expr:Expr, listener:Expr, recursive:Bool):Expr {
 		var fields:Array<FieldCall> = [];
 		
 		checkField(expr, fields, 0, true, recursive ? MAX_DEPTH : 0);
@@ -307,7 +330,8 @@ class Bind {
 		bindable.__fieldBindings__.removeGlobal(listener);
 	}
 	
-	macro static public function notify(field:Expr, ?from:Expr, ?to:Expr) {
+	@:noUsing macro static public function notify(field:Expr, ?from:Expr, ?to:Expr) {
+		field = fixExpr(field);
 		var fields:Array<FieldCall> = [];
 		checkField(field, fields, 0, false, 0);
 		
@@ -346,7 +370,7 @@ class Bind {
 	}
 	
 	static function checkField(expr:Expr, fields:Array<FieldCall>, depth = 0, warnNonBindable = true, maxDepth:Int):Void {
-		
+
 		if (depth > maxDepth) return ;
 		switch (expr.expr) {
 			
@@ -364,6 +388,7 @@ class Bind {
 				trace(last);*/
 			
 			case EField(e, f):
+
 				var type = Context.typeof(e);
 				var classField:ClassField = null;
 				var bindable = true;
@@ -423,11 +448,11 @@ class Bind {
 					
 					case _:
 						if (depth == 0)
-							Context.error('"${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
+							Context.error('1 "${e.toString()}" must be ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						else {
 							bindable = false;
 							if (warnNonBindable) 
-								Context.warning('"${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
+								Context.warning('2 "${e.toString()}" is not ${BindMacros.BINDING_INTERFACE_NAME}', e.pos);
 						}
 				}
 				

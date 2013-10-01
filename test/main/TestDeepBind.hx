@@ -120,7 +120,7 @@ class C implements IBindable {
 	function set_d(v) {
 		if (d == v) return v;
 		d = v;
-		toString.notify();
+		Bind.notify(this.toString);
 		return v;
 	}
 	

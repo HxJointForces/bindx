@@ -1,33 +1,22 @@
 package ;
 
-import main.TestForce;
-import main.TestProperty;
-import main.TestBindTo;
-import main.TestDeepBind;
-import main.TestBasicBind;
-import main.TestSubClass;
-import main.WrongTests;
-import main.WrongTest1;
-import main.TestFunctionBind;
-import main.TestClassLevel;
-import main.TestSimple;
 
 class TestRunner extends haxe.unit.TestRunner
 {
 	public static function main()
 	{
 		var runner = new TestRunner();
-		runner.add(new TestProperty());
-		runner.add(new TestSimple());
-		runner.add(new TestClassLevel());
-		runner.add(new TestFunctionBind());
-		runner.add(new WrongTest1());
-		runner.add(new WrongTests());
-		runner.add(new TestSubClass());
-		runner.add(new TestBasicBind());
-		runner.add(new TestDeepBind());
-		runner.add(new TestBindTo());
-		runner.add(new TestForce());
+		runner.add(new main.TestProperty());
+		runner.add(new main.TestSimple());
+		runner.add(new main.TestClassLevel());
+		runner.add(new main.TestFunctionBind());
+		runner.add(new main.WrongTest1());
+		runner.add(new main.WrongTests());
+		runner.add(new main.TestSubClass());
+		runner.add(new main.TestBasicBind());
+		runner.add(new main.TestDeepBind());
+		runner.add(new main.TestBindTo());
+		runner.add(new main.TestForce());
 		runner.run();
 	}
 }
