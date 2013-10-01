@@ -5,6 +5,6 @@
   "tags": [ "bind", "bindings", "flex", "cross", "HxJointForces" ],
   "description": "Powerful and fast macro-based data binding engine inspired by Flex Bindings with easy-to-use syntax.",
   "version": "1.0.7",
-  "releasenote": "haxe 3.1 temp fix",
+  "releasenote": "haxe 3.1 support",
   "contributors": [ "hxJointForces" ]
 }

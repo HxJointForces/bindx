@@ -7,6 +7,8 @@ dump
 *.iml
 *.ipr
 out/
+*.sublime-project
+*.sublime-workspace
 
 .DS_Store
 Thumbs.db
