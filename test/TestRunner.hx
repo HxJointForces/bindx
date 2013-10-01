@@ -17,6 +17,8 @@ class TestRunner extends haxe.unit.TestRunner
 		runner.add(new main.TestDeepBind());
 		runner.add(new main.TestBindTo());
 		runner.add(new main.TestForce());
+		runner.add(new main.TestNested());
+		runner.add(new main.TestNative());
 		runner.run();
 	}
 }
