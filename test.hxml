@@ -3,6 +3,7 @@
 -neko bin/bindx-test.n
 -main TestRunner
 --times
+-D bindx_compatibility
 #-D macro-times
 
 -D dump=pretty
@@ -13,18 +14,21 @@
 -cp src
 -cp test
 -cpp bin/cpp
+-D bindx_compatibility
 -main TestRunner
 
 --next
 -cp src
 -cp test
 -cs bin/cs
+-D bindx_compatibility
 -main TestRunner
 
 --next
 -cp src
 -cp test
 -java bin/java
+-D bindx_compatibility
 -main TestRunner
 
 --next
@@ -32,10 +36,12 @@
 -cp test
 -swf bin/bindx-test.swf
 -swf-version 10
+-D bindx_compatibility
 -main TestRunner
 
 --next
 -cp src
 -cp test
 -js bin/bindx-test.js
+-D bindx_compatibility
 -main TestRunner

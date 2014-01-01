@@ -202,7 +202,6 @@ class Bind {
 			switch (expr.expr) {
 	    		case EMeta(_, _):
 			        var pos = expr.pos;
-			        //Context.warning("using Bind is deprecated", pos);
 			        var posInfo = Context.getPosInfos(pos);
 			        var f = sys.io.File.getContent(posInfo.file);
 			        f = f.substring(posInfo.min, posInfo.max);
@@ -219,8 +218,13 @@ class Bind {
 	#end
 	
 	macro static public function bindxTo(expr:Expr, target:Expr, recursive:Bool = false):ExprOf<Void->Void> {
-		expr = fixExpr(expr);
-		return bindTo(expr, target, recursive);
+		var expr2 = fixExpr(expr);
+		#if !bindx_compatibility
+		if (expr != expr2) {
+			Context.warning('bindx.Bind.bindxTo(${expr2.toString()}, ${target.toString()}, {$recursive})', expr.pos);
+		}
+		#end
+		return bindTo(expr2, target, recursive);
 	}
 	
 	#if macro
@@ -257,13 +261,23 @@ class Bind {
 	#end
 
 	macro static public function bindx(expr:Expr, listener:Expr, recursive:Bool = false):Expr {
-		expr = fixExpr(expr);
-		return exprBind(expr, listener, recursive);
+		var expr2 = fixExpr(expr);
+		#if !bindx_compatibility
+		if (expr != expr2) {
+			Context.warning('bindx.Bind.bindx(${expr2.toString()},...', expr.pos);
+		}
+		#end
+		return exprBind(expr2, listener, recursive);
 	}
 	
 	macro static public function unbindx(expr:Expr, listener:Expr) {
-		expr = fixExpr(expr);
-		return _exprUnbind(expr, listener);
+		var expr2 = fixExpr(expr);
+		#if !bindx_compatibility
+		if (expr != expr2) {
+			Context.warning('bindx.Bind.unbindx(${expr2.toString()},...', expr.pos);
+		}
+		#end
+		return _exprUnbind(expr2, listener);
 	}
 	
 	#if macro
